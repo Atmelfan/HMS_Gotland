@@ -10,15 +10,16 @@ import Util.OSUtil;
 public class HMS_Gotland
 {
 	public static HMS_Gotland game;
-	private boolean exit;
+	
+	public DisplayHandler display = new DisplayHandler(this);
 	
 	private void run()
 	{
 		init();
 		
-		while(!exit && !Display.isCloseRequested())
+		while(!display.isCloseRequested())
 		{
-			//Game loop
+			display.update();
 		}
 		
 	}
@@ -26,14 +27,7 @@ public class HMS_Gotland
 	private void init()
 	{
 		System.setProperty("org.lwjgl.librarypath",System.getProperty("user.dir") + File.separator + "Resources" + File.separator + "native" + File.separator + OSUtil.getOS());
-		try
-		{
-			Display.create();
-		} catch (LWJGLException e)
-		{
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		display.init();
 	}
 
 	/**
