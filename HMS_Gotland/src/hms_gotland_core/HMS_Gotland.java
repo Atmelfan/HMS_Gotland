@@ -1,5 +1,12 @@
 package hms_gotland_core;
 
+import java.io.File;
+
+import org.lwjgl.LWJGLException;
+import org.lwjgl.opengl.Display;
+
+import Util.OSUtil;
+
 public class HMS_Gotland
 {
 	public static HMS_Gotland game;
@@ -9,7 +16,7 @@ public class HMS_Gotland
 	{
 		init();
 		
-		while(!exit)
+		while(!exit && !Display.isCloseRequested())
 		{
 			//Game loop
 		}
@@ -18,8 +25,15 @@ public class HMS_Gotland
 
 	private void init()
 	{
-		// TODO Auto-generated method stub
-		
+		System.setProperty("org.lwjgl.librarypath",System.getProperty("user.dir") + File.separator + "Resources" + File.separator + "native" + File.separator + OSUtil.getOS());
+		try
+		{
+			Display.create();
+		} catch (LWJGLException e)
+		{
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 
 	/**
