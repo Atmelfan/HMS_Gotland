@@ -20,6 +20,7 @@ public class HMS_Gotland
 		while(!display.isCloseRequested())
 		{
 			display.update();
+			//Lala
 		}
 		
 	}
