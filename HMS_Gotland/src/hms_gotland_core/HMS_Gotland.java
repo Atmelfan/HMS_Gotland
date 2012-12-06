@@ -2,9 +2,6 @@ package hms_gotland_core;
 
 import java.io.File;
 
-import org.lwjgl.LWJGLException;
-import org.lwjgl.opengl.Display;
-
 import Util.OSUtil;
 
 public class HMS_Gotland
@@ -20,7 +17,6 @@ public class HMS_Gotland
 		while(!display.isCloseRequested())
 		{
 			display.update();
-			//Lala
 		}
 		
 	}
