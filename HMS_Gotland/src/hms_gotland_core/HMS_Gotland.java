@@ -9,6 +9,7 @@ public class HMS_Gotland
 	public static HMS_Gotland game;
 	
 	public DisplayHandler display = new DisplayHandler(this);
+	public DisplayHandler display = new DisplayHandler(this);
 	
 	private void run()
 	{
