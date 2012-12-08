@@ -4,6 +4,8 @@ import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.HashMap;
 
+import javax.vecmath.Vector3f;
+
 import org.lwjgl.BufferUtils;
 import org.lwjgl.openal.AL10;
 import org.lwjgl.util.WaveData;
@@ -31,8 +33,9 @@ public class Sound
 		FloatBuffer listenerOri = BufferUtils.createFloatBuffer(6).put(new float[] { 0.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f });
 	}
 	
-	private void play(String name)
+	private void play(String name, float[] listPos, float[] listOri, float[] sourcPos, float[] sourcOri)
 	{
+		
 		Sound.SoundObject snd = sounds.get(name);
 		if(snd != null)
 		{
@@ -52,7 +55,7 @@ public class Sound
 		if(AL10.alGetError() != AL10.AL_NO_ERROR)
 			return;
 
-		WaveData waveFile = WaveData.create("FancyPants.wav");
+		WaveData waveFile = WaveData.create(name);
 		AL10.alBufferData(load.buffer.get(0), waveFile.format, waveFile.data, waveFile.samplerate);
 		waveFile.dispose();
 	}

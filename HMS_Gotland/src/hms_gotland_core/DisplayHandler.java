@@ -1,17 +1,21 @@
 package hms_gotland_core;
 
+import java.awt.Canvas;
+
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Mouse;
+import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.Pbuffer;
+import org.lwjgl.opengl.PixelFormat;
 
 public class DisplayHandler 
 {
 
-	
-	
-	private static final boolean IS_THE_SCREEN_FOCUS_ISSUE_FIXED_YET = true;
+	private int MAX_SAMPLES = 0;
 
 	public DisplayHandler(HMS_Gotland game) 
 	{
@@ -22,15 +26,32 @@ public class DisplayHandler
 	{
 		try
 		{
-                    DisplayMode mode = new DisplayMode(1000, 600);
-                    Display.setResizable(IS_THE_SCREEN_FOCUS_ISSUE_FIXED_YET);
-                    Display.setDisplayMode(mode);
-                    Display.setTitle("The HMS Gotland(pre-pre-pre-alpha)");
-                    Display.create();
-                    Mouse.setGrabbed(true);
+			Pbuffer tmp = new Pbuffer(64, 64, new PixelFormat(), null);
+			tmp.makeCurrent();
+			MAX_SAMPLES = GL11.glGetInteger(GL30.GL_MAX_SAMPLES);
+			tmp.destroy();
+			System.out.println("System capable of " + MAX_SAMPLES + "x multisampling.");
+		} catch (LWJGLException e1)
+		{
+			System.err.println("Failed to check multisampling capability :(");
+			e1.printStackTrace();
+		}
+		
+		try
+		{
+            DisplayMode mode = new DisplayMode(1000, 600);
+            Display.setResizable(true);
+            Display.setDisplayMode(mode);
+            
+            PixelFormat pixel = new PixelFormat(8, 24, 0, MAX_SAMPLES);
+            ContextAttribs context = new ContextAttribs(3, 2);
+            
+            Display.create(pixel, context);
+            Mouse.setGrabbed(true);
 		}catch(LWJGLException e)
 		{
-                    e.printStackTrace();
+			System.err.println("Failed to launch OpenGL 3.2 display :(");
+            e.printStackTrace();
 		}
 	}
 	
@@ -123,4 +144,5 @@ public class DisplayHandler
     {
 	return Display.isCloseRequested();
     }
+
 }
