@@ -32,4 +32,10 @@ public class RenderHandler
 	{
 		return (float)(1/Math.tan(d));
 	}
+
+	public void init()
+	{
+		// TODO Auto-generated method stub
+		
+	}
 }

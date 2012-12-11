@@ -1,7 +1,5 @@
 package hms_gotland_core;
 
-import java.awt.Canvas;
-
 import org.lwjgl.LWJGLException;
 import org.lwjgl.input.Mouse;
 import org.lwjgl.opengl.ContextAttribs;
@@ -106,7 +104,7 @@ public class DisplayHandler
 			}
 			
 			if (targetDisplayMode == null) {
-				System.out.println("Failed to find value mode: "+width+"x"+height+" fs="+fullscreen);
+				System.err.println("Failed to find value mode: "+width+"x"+height+" fs="+fullscreen);
 				return;
 			}
 
@@ -114,7 +112,7 @@ public class DisplayHandler
 			Display.setFullscreen(fullscreen);
 			
 		} catch (LWJGLException e) {
-			System.out.println("Unable to setup mode "+width+"x"+height+" fullscreen="+fullscreen + e);
+			System.err.println("Unable to setup mode "+width+"x"+height+" fullscreen="+fullscreen + e);
 		}
 	}
 	
@@ -135,14 +133,32 @@ public class DisplayHandler
     	
     }
 
-    public boolean isFulllScreen() 
+    public boolean isFullScreen() 
     {
         return Display.isFullscreen();
     }
 	
     public boolean isCloseRequested()
     {
-	return Display.isCloseRequested();
+    	return Display.isCloseRequested();
+    }
+    
+    public static int getX(float x)
+    {
+    	return (int)(Display.getWidth() * x);
+    }
+    
+    public static int getY(float y)
+    {
+    	return (int)(Display.getHeight() * y);
     }
 
+    @Override
+    public String toString()
+    {
+    	return "Display[Fullscreen=" + isFullScreen() + 
+    			", Title=" + Display.getTitle() + 
+    			", Pos={" + Display.getX() + "," + Display.getY() + "}" +
+    			", Size={" + Display.getHeight() + "," + Display.getWidth() + "}]";
+    }
 }

@@ -47,7 +47,7 @@ public class RenderObject
 
 		RenderHandler.projectionMatrix.store(buffer); buffer.flip();
 		GL20.glUniformMatrix4(projectionMatrixLocation, false, buffer);
-		viewMatrix.store(buffer); buffer.flip();
+		RenderHandler.viewMatrix.store(buffer); buffer.flip();
 		GL20.glUniformMatrix4(viewMatrixLocation, false, buffer);
 		modelMatrix.store(buffer); buffer.flip();
 		GL20.glUniformMatrix4(modelMatrixLocation, false, buffer);
