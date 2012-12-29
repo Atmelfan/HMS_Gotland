@@ -7,5 +7,6 @@
 	<classpathentry kind="lib" path="Resources/lwjgl_util.jar"/>
 	<classpathentry kind="lib" path="Resources/lwjgl.jar"/>
 	<classpathentry kind="lib" path="Resources/vecmath.jar"/>
+	<classpathentry kind="lib" path="Resources/PNGDecoder.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

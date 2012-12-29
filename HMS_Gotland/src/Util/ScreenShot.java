@@ -24,10 +24,7 @@ public class ScreenShot
 		ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * bpp);
 		GL11.glReadPixels(0, 0, width, height, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, buffer );
 		new ScreenShotSaveThread(buffer, width, height).start();
-		
 	}
-	
-	
 }
 
 class ScreenShotSaveThread extends Thread
