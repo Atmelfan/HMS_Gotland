@@ -8,7 +8,7 @@ public class ModelPool
 {
 	private HashMap<String, Model> models = new HashMap<String, Model>();
 	
-	private final String DEFAULT_MODEL_PATH = "/Resources/models/";
+	private final String DEFAULT_MODEL_PATH = "Resources/models/";
 
 	public Model getModel(String name)
 	{
@@ -27,10 +27,10 @@ public class ModelPool
 		File file = new File(dir + name);
 		if(!file.exists())//Model does not exist
 		{
-			System.out.println("ModelPool::file does not exist(" + file.getPath() + ")");
+			System.out.println("ModelPool::file does not exist(" + file.getAbsolutePath() + ")");
 			return false;
 		}
-		ModelObj model = new ModelObj(file);
+		ModelObj model = new ModelObj(file, true);
 		System.out.println("ModelPool::load(" +  file.getName() + ") - " + (model == null ? "Failed!" : "Success!"));
 		return models.put(name, model) != null;
 	}
@@ -49,7 +49,7 @@ public class ModelPool
 		for (int i = 0; i < files.length; i++)
 		{
 			System.out.println("ModelPool::load(" +  files[i].getName() + ") - " + 
-			(models.put(files[i].getName(), new ModelObj(files[i])) == null ? "Failed!" : "Success!"));
+			(models.put(files[i].getName(), new ModelObj(files[i], true)) == null ? "Failed!" : "Success!"));
 		}
 		
 		return true;

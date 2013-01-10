@@ -1,13 +1,12 @@
 package hms_gotland_core;
 
-import java.io.BufferedReader;
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileReader;
-import java.io.IOException;
-import java.io.InputStream;
-import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
+
+import javax.vecmath.Quat4f;
+import javax.vecmath.Vector3f;
+
+import level.Level;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -19,35 +18,32 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
-import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.PixelFormat;
-import org.lwjgl.util.glu.GLU;
 import org.lwjgl.util.vector.Matrix4f;
 
-import Renderers.ModelObj;
+import com.bulletphysics.linearmath.Transform;
+
+
+import entity.EntityPlayer;
+
+import Renderers.ModelPool;
 import Util.GLUtil;
 import Util.OSUtil;
 import Util.ShaderUtils;
-import Util.VertexData;
 
-import de.matthiasmann.twl.utils.PNGDecoder;
-import de.matthiasmann.twl.utils.PNGDecoder.Format;
-
-public class OpenGL32Test
+public class HMS_Gotland
 {
 	// Entry point for the application
 	public static void main(String[] args) 
 	{
-		new OpenGL32Test();
+		new HMS_Gotland();
 	}
 	
 	// Setup variables
 	private final String WINDOW_TITLE = "OpenGL 3.2 test - fps: ";
 	private final int WIDTH = 640;
 	private final int HEIGHT = 480;
-	// Quad variables
 	// Shader variables
 	private int vsId = 0;
 	private int fsId = 0;
@@ -58,33 +54,50 @@ public class OpenGL32Test
 	// Moving variables
 	private int projectionMatrixLocation = 0;
 	private int viewMatrixLocation = 0;
-	private int modelMatrixLocation = 0;
+	public static int modelMatrixLocation = 0;
 	private Matrix4f modelMatrix = null;
 	
 	private FloatBuffer matrix44Buffer = null;
 	long lastFrame = 0;
 	private int fps;
 	private int cfps;
-	private Camera camera;
-	private ModelObj obj;
 	
-	public OpenGL32Test() 
+	private Camera camera;
+	private Level level;
+	
+	public ModelPool models = new ModelPool();
+	private long lastTick;
+	
+	public HMS_Gotland() 
 	{
 		System.setProperty("org.lwjgl.librarypath",System.getProperty("user.dir") + File.separator + "Resources" + File.separator + "native" + File.separator + OSUtil.getOS());
-		
-		// Initialize OpenGL (Display)
+		run();
+	}
+	
+	public void run()
+	{
 		setupOpenGL();
 		
-		setupQuad();
-		this.setupShaders();
-		this.setupTextures();
-		this.setupMatrices();
-		lastFrame = Sys.getTime();
+		setCamera(new Camera(WIDTH, HEIGHT, 0.1f, 1000f));
+		camera.setPos(new org.lwjgl.util.vector.Vector3f(0, -2, -10));
+		setupMatrices();
 		
-		while (!Display.isCloseRequested()) {
-			// Do a single loop (logic/render)
-			
+		setupQuad();
+		setupShaders();
+		setupTextures();
+		
+		camera.owner = getPlayer();
+		
+		lastTick = lastFrame = Sys.getTime();
+		
+		while (!Display.isCloseRequested()) 
+		{
 			cfps++;
+			if(Sys.getTime() - lastTick >= 16)
+			{
+				level.tick();
+				lastTick = Sys.getTime();
+			}
 			if(Sys.getTime() - lastFrame >= 1000)
 			{
 				lastFrame = Sys.getTime();
@@ -92,22 +105,18 @@ public class OpenGL32Test
 				cfps = 0;
 				Display.setTitle(WINDOW_TITLE + fps);
 			}
+			
 			loopCycle();
-			// Force a maximum FPS of about 60
-			//Display.sync(60);
 			// Let the CPU synchronize with the GPU if GPU is tagging behind
 			Display.update();
 		}
 		
 		// Destroy OpenGL (Display)
-		this.destroyOpenGL();
+		destroyOpenGL();
 	}
 
 	private void setupMatrices() 
 	{
-		//Setup camera
-		camera = new Camera(WIDTH, HEIGHT, 0.1f, 1000f);
-		
 		// Setup model matrix
 		modelMatrix = new Matrix4f();
 		
@@ -118,8 +127,6 @@ public class OpenGL32Test
 	private void setupTextures() {
 		texIds[0] = GLUtil.loadPNGTexture("Resources/assets/asset1.png", GL13.GL_TEXTURE0);
 		texIds[1] = GLUtil.loadPNGTexture("Resources/assets/asset2.png", GL13.GL_TEXTURE0);
-		
-		this.exitOnGLError("setupTexture");
 	}
 
 	private void setupOpenGL() {
@@ -147,16 +154,12 @@ public class OpenGL32Test
 		GL11.glViewport(0, 0, WIDTH, HEIGHT);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glDepthFunc(GL11.GL_LESS);
-		
-		this.exitOnGLError("setupOpenGL");
 	}
 	
 	private void setupQuad() {
 		// We'll define our quad using 4 vertices of the custom 'TexturedVertex' class
-		obj = new ModelObj(new File("Resources/models/crawler.obj"));
+		level = new Level("test", this);
 		// Set the default quad rotation, scale and position values
-		
-		this.exitOnGLError("setupQuad");
 	}
 	
 	private void setupShaders() {		
@@ -180,13 +183,31 @@ public class OpenGL32Test
 		modelMatrixLocation = GL20.glGetUniformLocation(pId, "modelMatrix");
 		
 		GL20.glValidateProgram(pId);
-		
-		this.exitOnGLError("setupShaders");
 	}
 	
 	private void logicCycle() {
 		//-- Input processing
 		float posDelta = 0.1f;
+		
+		while(Mouse.next())
+		{
+			if(!Mouse.getEventButtonState()) continue;
+			
+			if(Mouse.getEventButton() == 0 && !Mouse.isGrabbed())
+			{
+				Mouse.setGrabbed(true);
+			}
+		}
+		
+		if(Mouse.isGrabbed())
+		{
+			level.player.getBody().applyTorque(new Vector3f(Mouse.getDY() / 5, Mouse.getDX() / 5, 0));
+			
+		}
+		
+		//Vector3f angle = VectorUtil.toBulletVector(camera.angle);
+		
+		//getPlayer().move(new Vector3f(0, 0, 0), angle);
 		
 		while(Keyboard.next()) 
 		{			
@@ -206,50 +227,41 @@ public class OpenGL32Test
 			// Change model scale, rotation and translation values
 			switch (Keyboard.getEventKey()) 
 			{
+				/*
+				 * Game control keys
+				 */
 			case Keyboard.KEY_ESCAPE:
 				Mouse.setGrabbed(false);
 				break;
-			case Keyboard.KEY_UP:
-				camera.pos.x += posDelta;
+			case Keyboard.KEY_F5:
+				level.reloadLevel();
 				break;
-			case Keyboard.KEY_DOWN:
-				camera.pos.x -= posDelta;
+				/*
+				 * Movement keys
+				 */
+			case Keyboard.KEY_W:
+				//getPlayer().move(new Vector3f(0, 0, posDelta), angle);
 				break;
-			// Scale
-			case Keyboard.KEY_P:
-				camera.pos.y += posDelta;
+			case Keyboard.KEY_S:
+				//getPlayer().move(new Vector3f(0, 0, -posDelta), angle);;
 				break;
-			case Keyboard.KEY_M:
-				camera.pos.y -= posDelta;
+			case Keyboard.KEY_A:
+				//getPlayer().move(new Vector3f(posDelta, 0, 0), angle);
 				break;
-			// Rotation
-			case Keyboard.KEY_LEFT:
-				camera.pos.z += posDelta;
+			case Keyboard.KEY_D:
+				//getPlayer().move(new Vector3f(-posDelta, 0, 0), angle);
 				break;
-			case Keyboard.KEY_RIGHT:
-				camera.pos.z -= posDelta;
+				/*
+				 * Character control keys
+				 */
+			case Keyboard.KEY_SPACE:
+				//getPlayer().move(new Vector3f(0, posDelta, 0), angle);
 				break;
 			}
 			
 		}
 		
-		while(Mouse.next())
-		{
-			if(!Mouse.getEventButtonState()) continue;
-			
-			if(Mouse.getEventButton() == 0 && !Mouse.isGrabbed())
-			{
-				Mouse.setGrabbed(true);
-			}
-		}
-		
-		if(Mouse.isGrabbed())
-		{
-			camera.angle.x -= Mouse.getDY();
-			camera.angle.y += Mouse.getDX();
-		}
-		
-		camera.update();
+		getCamera().update();
 		//-- Update matrices
 		// Reset view and model matrices
 		modelMatrix = new Matrix4f();
@@ -257,14 +269,12 @@ public class OpenGL32Test
 		// Upload matrices to the uniform variables
 		GL20.glUseProgram(pId);
 		{
-			camera.uploadBuffer(projectionMatrixLocation, Camera.PROJECTION_MATRIX);
-			camera.uploadBuffer(viewMatrixLocation, Camera.VIEW_MATRIX);
+			getCamera().uploadBuffer(projectionMatrixLocation, Camera.PROJECTION_MATRIX);
+			getCamera().uploadBuffer(viewMatrixLocation, Camera.VIEW_MATRIX);
 			modelMatrix.store(matrix44Buffer); matrix44Buffer.flip();
 			GL20.glUniformMatrix4(modelMatrixLocation, false, matrix44Buffer);
 		}
 		GL20.glUseProgram(0);
-		
-		this.exitOnGLError("logicCycle");
 	}
 	
 	private void renderCycle() {
@@ -277,20 +287,18 @@ public class OpenGL32Test
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texIds[textureSelector]);
 		
 		// Bind to the VAO that has all the information about the vertices
-		obj.draw();
+		level.draw();
 		
 		GL20.glUseProgram(0);
-		
-		this.exitOnGLError("renderCycle");
 	}
 	
-	private void loopCycle() {
+	private void loopCycle() 
+	{
 		// Update logic
-		this.logicCycle();
+		logicCycle();
 		// Update rendered frame
-		this.renderCycle();
+		renderCycle();
 		
-		this.exitOnGLError("loopCycle");
 	}
 	
 	private void destroyOpenGL() {	
@@ -307,22 +315,41 @@ public class OpenGL32Test
 		GL20.glDeleteShader(fsId);
 		GL20.glDeleteProgram(pId);
 		
-		obj.destroy();
-		
-		this.exitOnGLError("destroyOpenGL");
+		level.destroy();
 		
 		Display.destroy();
 	}
-	
-	private void exitOnGLError(String errorMessage) {
-		int errorValue = GL11.glGetError();
-		
-		if (errorValue != GL11.GL_NO_ERROR) {
-			String errorString = GLU.gluErrorString(errorValue);
-			System.err.println("ERROR - " + errorMessage + ": " + errorString);
-			
-			if (Display.isCreated()) Display.destroy();
-			System.exit(-1);
-		}
+
+	/**
+	 * @return the camera
+	 */
+	public Camera getCamera()
+	{
+		return camera;
 	}
+
+	/**
+	 * @param camera the camera to set
+	 */
+	public void setCamera(Camera camera)
+	{
+		this.camera = camera;
+	}
+
+	/**
+	 * @return the player
+	 */
+	public EntityPlayer getPlayer()
+	{
+		return level.player;
+	}
+
+	/**
+	 * @param player the player to set
+	 */
+	public void setPlayer(EntityPlayer player)
+	{
+		level.player = player;
+	}
+
 }

@@ -47,12 +47,16 @@ public class ModelObj extends Model
 	public float farpoint = 0;		// z-
 	public float nearpoint = 0;		// z+
 	
-	public ModelObj(File file)
+	public ModelObj(File file, boolean clearVertexData)
 	{
 		read(file);
 		centerit();
 		compileVBO();
 		cleanup();
+		if(clearVertexData)
+		{
+			data.clear();
+		}
 	}
 
 	private void cleanup() 
@@ -233,10 +237,10 @@ public class ModelObj extends Model
 	
 	private int vaoId;
 	private int vboId;
+	public ArrayList<VertexData> data = new ArrayList<>();
 	
 	public void compileVBO()
 	{
-		ArrayList<VertexData> data = new ArrayList<VertexData>();
 		
 		for (int i = 0; i < faces.size(); i++)
 		{

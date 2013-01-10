@@ -100,7 +100,7 @@ public class GLUtil
 	 * @param from
 	 * @return Vecmath vector from lwjgl vector
 	 */
-	public static javax.vecmath.Matrix4f jBulletVector(org.lwjgl.util.vector.Matrix4f from)
+	public static javax.vecmath.Matrix4f jBulletMatrix(org.lwjgl.util.vector.Matrix4f from)
 	{
 		return new javax.vecmath.Matrix4f(from.m00, from.m01, from.m02, from.m03, 
 										  from.m10, from.m11, from.m12, from.m13, 
@@ -113,7 +113,7 @@ public class GLUtil
 	 * @param from
 	 * @return Lwjgl vector from vecmath vector
 	 */
-	public static org.lwjgl.util.vector.Matrix4f lwjglVector(javax.vecmath.Matrix4f from)
+	public static org.lwjgl.util.vector.Matrix4f lwjglMatrix(javax.vecmath.Matrix4f from)
 	{
 		//return new org.lwjgl.util.vector.Matrix4f(from); //Of course...
 		org.lwjgl.util.vector.Matrix4f retur = new org.lwjgl.util.vector.Matrix4f();

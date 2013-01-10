@@ -10,14 +10,18 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
+import entity.Entity;
+
 /**
  * @author Atmelfan
- *
+ * OpenGL 3.x compatible camera
  */
 public class Camera
 {
 	public boolean thirdPerson = false;
 	public float thirdPersonRadius = 10F;
+	
+	public Entity owner;
 	
 	public Vector3f pos = new Vector3f();
 	public Vector3f angle = new Vector3f();
@@ -44,7 +48,7 @@ public class Camera
 		
 		if(thirdPerson)
 		{
-			viewMatrix.translate(new Vector3f(0F, 0F, thirdPersonRadius));
+			viewMatrix.translate(new Vector3f(0F, 0F, -thirdPersonRadius));
 		}
 		
 		viewMatrix.rotate((float) Math.toRadians(angle.z), new Vector3f(0, 0, 1));
@@ -81,7 +85,13 @@ public class Camera
 		switch(targetMatrix)
 		{
 		case VIEW_MATRIX:
-			viewMatrix.store(tempBuffer); tempBuffer.flip();
+			if(owner != null)
+			{
+				tempBuffer.put(owner.getModelMatrix()); tempBuffer.flip();
+			}else
+			{
+				viewMatrix.store(tempBuffer); tempBuffer.flip();
+			}
 			GL20.glUniformMatrix4(matrixPos, false, tempBuffer);
 			break;
 		case PROJECTION_MATRIX:
@@ -94,5 +104,69 @@ public class Camera
 		default:
 			break;
 		}
+	}
+
+	/**
+	 * @return the thirdPerson
+	 */
+	public boolean isThirdPerson()
+	{
+		return thirdPerson;
+	}
+
+	/**
+	 * @param thirdPerson the thirdPerson to set
+	 */
+	public void setThirdPerson(boolean thirdPerson)
+	{
+		this.thirdPerson = thirdPerson;
+	}
+
+	/**
+	 * @return the thirdPersonRadius
+	 */
+	public float getThirdPersonRadius()
+	{
+		return thirdPersonRadius;
+	}
+
+	/**
+	 * @param thirdPersonRadius the thirdPersonRadius to set
+	 */
+	public void setThirdPersonRadius(float thirdPersonRadius)
+	{
+		this.thirdPersonRadius = thirdPersonRadius;
+	}
+
+	/**
+	 * @return the pos
+	 */
+	public Vector3f getPos()
+	{
+		return pos;
+	}
+
+	/**
+	 * @param pos the pos to set
+	 */
+	public void setPos(Vector3f pos)
+	{
+		this.pos = pos;
+	}
+
+	/**
+	 * @return the angle
+	 */
+	public Vector3f getAngle()
+	{
+		return angle;
+	}
+
+	/**
+	 * @param angle the angle to set
+	 */
+	public void setAngle(Vector3f angle)
+	{
+		this.angle = angle;
 	}
 }
