@@ -22,8 +22,6 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.vector.Matrix4f;
 
-import com.bulletphysics.linearmath.Transform;
-
 
 import entity.EntityPlayer;
 
@@ -34,14 +32,13 @@ import Util.ShaderUtils;
 
 public class HMS_Gotland
 {
-	// Entry point for the application
 	public static void main(String[] args) 
 	{
 		new HMS_Gotland();
 	}
 	
 	// Setup variables
-	private final String WINDOW_TITLE = "OpenGL 3.2 test - fps: ";
+	private final String WINDOW_TITLE = "OpenGL 3 test";
 	private final int WIDTH = 640;
 	private final int HEIGHT = 480;
 	// Shader variables
@@ -60,7 +57,7 @@ public class HMS_Gotland
 	private FloatBuffer matrix44Buffer = null;
 	long lastFrame = 0;
 	private int fps;
-	private int cfps;
+	private int currentfps;
 	
 	private Camera camera;
 	private Level level;
@@ -77,7 +74,11 @@ public class HMS_Gotland
 	public void run()
 	{
 		setupOpenGL();
-		
+		System.out.println("====================INFO==================== ");
+		System.out.println("Operating system: " + System.getProperty("os.name"));
+		System.out.println("Graphics card: " + GL11.glGetString(GL11.GL_VENDOR));
+		System.out.println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION));
+		System.out.println("Shader version: " + GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION));
 		setCamera(new Camera(WIDTH, HEIGHT, 0.1f, 1000f));
 		camera.setPos(new org.lwjgl.util.vector.Vector3f(0, -2, -10));
 		setupMatrices();
@@ -92,7 +93,7 @@ public class HMS_Gotland
 		
 		while (!Display.isCloseRequested()) 
 		{
-			cfps++;
+			currentfps++;
 			if(Sys.getTime() - lastTick >= 16)
 			{
 				level.tick();
@@ -101,8 +102,8 @@ public class HMS_Gotland
 			if(Sys.getTime() - lastFrame >= 1000)
 			{
 				lastFrame = Sys.getTime();
-				fps = cfps;
-				cfps = 0;
+				fps = currentfps;
+				currentfps = 0;
 				Display.setTitle(WINDOW_TITLE + fps);
 			}
 			
@@ -147,6 +148,8 @@ public class HMS_Gotland
 			System.exit(-1);
 		}
 		
+		
+		
 		// Setup an XNA like background color
 		//GL11.glClearColor(0.4f, 0.6f, 0.9f, 0f);
 		
@@ -187,7 +190,6 @@ public class HMS_Gotland
 	
 	private void logicCycle() {
 		//-- Input processing
-		float posDelta = 0.1f;
 		
 		while(Mouse.next())
 		{

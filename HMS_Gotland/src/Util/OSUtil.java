@@ -8,7 +8,7 @@ public class OSUtil
 	public static String getOS()
 	{
 		String os = System.getProperty("os.name").toLowerCase();
-		System.out.println("Operating system: " + os);
+		
 		
 		//Tested platform.
 		if(os.contains("win"))
