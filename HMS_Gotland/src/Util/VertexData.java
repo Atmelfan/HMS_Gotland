@@ -1,12 +1,10 @@
 /**
  * HMS_Gotland/VertexData.java - 16 dec 2012:15:17:05
- * (c) Gustav 'Atmelfan' Palmqvist 2012
  */
 package Util;
 
 /**
- * @author Atmelfan
- *
+ * @author LWJGL Wiki
  */
 public class VertexData {
 	// Vertex data
