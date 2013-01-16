@@ -60,7 +60,6 @@ public class Camera
 		{
 			viewMatrix.translate(new Vector3f(0F, 0F, -thirdPersonRadius));
 		}
-		
 		viewMatrix.rotate((float) Math.toRadians(angle.z), new Vector3f(0, 0, 1));
 		viewMatrix.rotate((float) Math.toRadians(angle.y), new Vector3f(0, 1, 0));
 		viewMatrix.rotate((float) Math.toRadians(angle.x), new Vector3f(1, 0, 0));

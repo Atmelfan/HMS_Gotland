@@ -1,4 +1,4 @@
-package Renderers;
+package model;
 
 import hms_gotland_core.RenderEngine;
 
@@ -16,9 +16,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
-
-import com.bulletphysics.util.FloatArrayList;
-import com.bulletphysics.util.IntArrayList;
 
 import Util.VertexData;
 

@@ -2,8 +2,9 @@ package hms_gotland_core;
 
 import java.util.HashMap;
 
-import Renderers.Model;
-import Renderers.ModelPool;
+import model.Model;
+import model.ModelPool;
+
 import Util.ShaderUtils;
 
 public class RenderEngine

@@ -1,4 +1,4 @@
-package Renderers;
+package model;
 
 import java.io.File;
 import java.io.FilenameFilter;
@@ -19,7 +19,6 @@ public class ModelPool
 		}else//Model is loaded
 		{
 			return models.get(name);
-			
 		}
 	}
 
@@ -30,17 +29,12 @@ public class ModelPool
 		{
 			System.out.println("ModelPool::file does not exist(" + file.getAbsolutePath() + ")");
 			return false;
-		}	
+		}
 		ModelObj model = new ModelObj(file, true);
-		System.out.println("ModelPool::load(" +  file.getName() + ") - " + model.numpolygons() + " triangles");
+		System.out.println("ModelPool::load(" +  file.getName() + ") - " + (model == null ? "Failed!" : "Success!"));
 		return models.put(name, model) != null;
 	}
 	
-	/**
-	 * Used when loading a new level
-	 * @param file
-	 * @return
-	 */
 	public boolean loadFolder(File file)
 	{
 		if(!file.exists() || !file.isDirectory())//Folder does not exist or isn't a folder
@@ -53,17 +47,8 @@ public class ModelPool
 		//Loop, load and store all models into hashmap
 		for (int i = 0; i < files.length; i++)
 		{
-			
-			if(!models.containsKey(files[i].getName()))
-			{
-				Model model = new ModelObj(files[i], true);
-				System.out.println("ModelPool::load(" +  files[i].getName() + ") - " + model.numpolygons() + " polygons");
-				models.put(files[i].getName(), model);
-			}else
-			{
-				System.out.println("ModelPool::skipped(" +  files[i].getName() + "), already loaded.");
-			}
-			
+			System.out.println("ModelPool::load(" +  files[i].getName() + ") - " + 
+			(models.put(files[i].getName(), new ModelObj(files[i], true)) == null ? "Failed!" : "Success!"));
 		}
 		
 		return true;
@@ -71,10 +56,12 @@ public class ModelPool
 	
 	private static FilenameFilter modelFilter = new FilenameFilter()
 	{
+
 		@Override
 		public boolean accept(File arg0, String arg1)
 		{
-			return arg1.endsWith(".obj") || arg1.endsWith(".md2");
+			return arg1.endsWith(".obj");
 		}
+		
 	};
 }

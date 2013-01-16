@@ -180,14 +180,13 @@ public class ShaderUtils
 	public static int makeShader(String source, int type)
 	{
 		int id = GL20.glCreateShader(type);
-		// GLException.checkGLError();
 		GL20.glShaderSource(id, source);
 		// GLException.checkGLError();
 		GL20.glCompileShader(id);
 		String s = GL20.glGetShaderInfoLog(id, 1000);
 		if (!s.isEmpty())
 		{
-			System.err.println("Error compiling " + source);
+			System.err.println("Error compiling shader!\n" + source);
 			System.err.println(s);
 			return -1;
 		}

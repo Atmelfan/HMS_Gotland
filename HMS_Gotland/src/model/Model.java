@@ -1,4 +1,4 @@
-package Renderers;
+package model;
 
 public class Model
 {
@@ -21,11 +21,6 @@ public class Model
 	}
 	
 	public float getZDepth() 
-	{
-		return 0;
-	}
-	
-	public int numpolygons() 
 	{
 		return 0;
 	}

@@ -15,8 +15,6 @@ import java.util.ArrayList;
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
 
-import org.lwjgl.util.vector.Matrix4f;
-
 import com.bulletphysics.collision.broadphase.AxisSweep3;
 import com.bulletphysics.collision.broadphase.BroadphaseNativeType;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
@@ -43,8 +41,7 @@ import entity.Entity;
 import entity.EntityList;
 import entity.EntityPlayer;
 
-import Renderers.ModelObj;
-import Renderers.ModelPool;
+import model.ModelObj;
 import Util.VertexData;
 
 public class Level

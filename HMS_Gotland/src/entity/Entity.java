@@ -4,6 +4,7 @@ import javax.vecmath.Vector3f;
 
 import level.Level;
 
+import model.Model;
 
 import com.bulletphysics.collision.shapes.BoxShape;
 import com.bulletphysics.dynamics.RigidBody;
@@ -11,7 +12,6 @@ import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.Transform;
 
 import hms_gotland_core.HMS_Gotland;
-import Renderers.Model;
 
 public class Entity
 {
