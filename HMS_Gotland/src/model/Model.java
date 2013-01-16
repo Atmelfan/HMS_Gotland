@@ -1,4 +1,4 @@
-package Renderers;
+package model;
 
 public class Model
 {

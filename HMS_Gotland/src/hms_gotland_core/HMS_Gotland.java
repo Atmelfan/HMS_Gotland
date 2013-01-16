@@ -7,6 +7,7 @@ import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
 
 import level.Level;
+import model.ModelPool;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -25,7 +26,6 @@ import org.lwjgl.util.vector.Matrix4f;
 
 import entity.EntityPlayer;
 
-import Renderers.ModelPool;
 import Util.GLUtil;
 import Util.OSUtil;
 import Util.ShaderUtils;

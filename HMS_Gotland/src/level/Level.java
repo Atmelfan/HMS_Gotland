@@ -12,6 +12,8 @@ import java.util.ArrayList;
 
 import javax.vecmath.Vector3f;
 
+import model.ModelObj;
+
 import com.bulletphysics.collision.broadphase.AxisSweep3;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
@@ -30,7 +32,6 @@ import entity.Entity;
 import entity.EntityList;
 import entity.EntityPlayer;
 
-import Renderers.ModelObj;
 import Util.VertexData;
 
 public class Level

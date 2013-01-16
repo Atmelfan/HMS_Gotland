@@ -5,6 +5,8 @@ import java.nio.FloatBuffer;
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
 
+import model.Model;
+
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL20;
 
@@ -15,7 +17,6 @@ import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
 
 import hms_gotland_core.HMS_Gotland;
-import Renderers.Model;
 
 public class Entity
 {
