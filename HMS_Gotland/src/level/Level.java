@@ -2,26 +2,39 @@ package level;
 
 
 import hms_gotland_core.HMS_Gotland;
+import hms_gotland_core.RenderEngine;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
+import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
 
+import org.lwjgl.util.vector.Matrix4f;
+
 import com.bulletphysics.collision.broadphase.AxisSweep3;
+import com.bulletphysics.collision.broadphase.BroadphaseNativeType;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
+import com.bulletphysics.collision.shapes.BvhTriangleMeshShape;
 import com.bulletphysics.collision.shapes.CollisionShape;
 import com.bulletphysics.collision.shapes.ConvexHullShape;
+import com.bulletphysics.collision.shapes.IndexedMesh;
+import com.bulletphysics.collision.shapes.StridingMeshInterface;
+import com.bulletphysics.collision.shapes.TriangleIndexVertexArray;
+import com.bulletphysics.collision.shapes.TriangleMeshShape;
+import com.bulletphysics.collision.shapes.TriangleShape;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.DynamicsWorld;
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
+import com.bulletphysics.dynamics.vehicle.RaycastVehicle;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
 import com.bulletphysics.util.ObjectArrayList;
@@ -31,6 +44,7 @@ import entity.EntityList;
 import entity.EntityPlayer;
 
 import Renderers.ModelObj;
+import Renderers.ModelPool;
 import Util.VertexData;
 
 public class Level
@@ -50,12 +64,17 @@ public class Level
 	
 	public DynamicsWorld level;
 	private HMS_Gotland game;
+
+	public RenderEngine renderEngine = new RenderEngine();
 	
 	public Level(String name, HMS_Gotland gotland)
 	{
 		game = gotland;
 		setupWorld();
-		player = new EntityPlayer(game, new Vector3f());addEntity(player);
+		
+		player = new EntityPlayer(this, new Vector3f());
+		addEntity(player);
+		
 		levelFile = new File(DEFAULT_LEVEL_PATH + name);
 		parseLevelFile(levelFile);
 	}
@@ -110,6 +129,25 @@ public class Level
 		level.getDispatchInfo().allowedCcdPenetration = 0f;
 	}
 	
+	public void explosion(Vector3f pos, float power)
+	{
+		for (int i = 0; i < entities.size(); i++)
+		{
+			Entity entity = entities.get(i);
+			
+			Vector3f v = new Vector3f(entity.getPos());
+			v.sub(pos);
+			
+			Vector3f v1 = new Vector3f(entity.getPos());
+			v1.sub(pos);
+			v1.normalize();
+			//Field force lowers by distance squared
+			v1.scale(power - v1.lengthSquared());
+			
+			entity.getBody().applyForce(v1, v);
+		}
+	}
+	
 	private void parseLevelFile(File file)
 	{
 		System.out.println("Loading level...");
@@ -125,13 +163,22 @@ public class Level
 				lineCount++;
 				line = line.toLowerCase().trim();
 				
+				//&model command points to models used in this level
+				if(line.startsWith("&models"))
+				{
+					String[] lines = line.split(" ");
+					if(lines.length > 1)
+					{
+						renderEngine.modelpool.loadFolder(new File(file, lines[1]));
+					}
+				}
 				if(line.startsWith("&entity"))
 				{
 					String[] lines = line.split(" ");
 					if(lines.length > 4)
 					{
 						
-						Entity e = EntityList.getEntity(lines[1], game, new Vector3f(Float.valueOf(lines[2]), Float.valueOf(lines[3]), Float.valueOf(lines[4])));
+						Entity e = EntityList.getEntity(lines[1], this, new Vector3f(Float.valueOf(lines[2]), Float.valueOf(lines[3]), Float.valueOf(lines[4])));
 						if(e != null)
 						{
 							addEntity(e);
@@ -158,7 +205,16 @@ public class Level
 							
 							if("angle".equals(lines[1]) && lines.length > 4)
 							{
-								//TODO
+								Matrix3f t = player.getWorldTransform().basis;
+								t.rotX(Float.valueOf(lines[2]));
+								t.rotY(Float.valueOf(lines[3]));
+								t.rotZ(Float.valueOf(lines[4]));
+								player.getWorldTransform().set(t);
+							}
+							
+							if("damage".equals(lines[1]) && lines.length > 2)
+							{
+								
 							}
 						} catch (NumberFormatException e)
 						{
@@ -206,8 +262,15 @@ public class Level
 						Vector3f localInertia = new Vector3f(0F, 0F, 0F);
 					    DefaultMotionState myMotionState = new DefaultMotionState(groundTransform);
 						RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, myMotionState, groundShape, localInertia);
+						levelbody = new RigidBody(rbInfo);
+						levelbody.setRestitution(0.1f);
+						levelbody.setFriction(0.50f);
+						levelbody.setDamping(0f, 0f);
 						//Add level body to level
-						level.addRigidBody(new RigidBody(rbInfo));
+						
+						
+						
+						level.addRigidBody(levelbody);
 						model.data.clear();
 					}else
 					{

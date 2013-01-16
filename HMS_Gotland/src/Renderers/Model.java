@@ -24,4 +24,9 @@ public class Model
 	{
 		return 0;
 	}
+	
+	public int numpolygons() 
+	{
+		return 0;
+	}
 }

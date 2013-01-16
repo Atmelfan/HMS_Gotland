@@ -1,5 +1,7 @@
 package Renderers;
 
+import hms_gotland_core.RenderEngine;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -15,27 +17,33 @@ import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
+import com.bulletphysics.util.FloatArrayList;
+import com.bulletphysics.util.IntArrayList;
+
 import Util.VertexData;
+
+/**
+ * @author Jeremy Adams (elias4444)
+ *
+ * Use these lines if reading from a file
+ * FileReader fr = new FileReader(ref);
+ * BufferedReader br = new BufferedReader(fr);
+
+ * Use these lines if reading from within a jar
+ * InputStreamReader fr = new InputStreamReader(new BufferedInputStream(getClass().getClassLoader().getResourceAsStream(ref)));
+ * BufferedReader br = new BufferedReader(fr);
+ */
 
 public class ModelObj extends Model
 {
 	
-
-	
-	/*public static int IDs = 0;
-	private int id = IDs++;
-	
-	@Override
-	public int hashCode()
-	{
-		return id;
-	}*/
-	
 	private ArrayList<float[]> vertexsets = new ArrayList<float[]>(); // Vertex Coordinates
 	private ArrayList<float[]> vertexsetstexs = new ArrayList<float[]>(); // Vertex Coordinates Textures
+	private ArrayList<float[]> vertexsetsnorms = new ArrayList<float[]>(); // Vertex Coordinates
 	
 	private ArrayList<int[]> faces = new ArrayList<int[]>(); // Array of Faces (vertex sets)
 	private ArrayList<int[]> facestexs = new ArrayList<int[]>(); // Array of of Faces textures
+	private ArrayList<int[]> facesnorms = new ArrayList<int[]>(); // Array of of Faces textures
 	
 	private int numpolys = 0;
 	
@@ -63,7 +71,10 @@ public class ModelObj extends Model
 	{
 		vertexsets.clear();
 		vertexsetstexs.clear();
+		vertexsetsnorms.clear();
+		
 		faces.clear();
+		facestexs.clear();
 		facestexs.clear();
 	}
 	
@@ -135,7 +146,7 @@ public class ModelObj extends Model
 						}
 						vertexsetstexs.add(coords);
 					}
-					/*if (newline.charAt(0) == 'v' && newline.charAt(1) == 'n') {
+					if (newline.charAt(0) == 'v' && newline.charAt(1) == 'n') {
 						float[] coords = new float[4];
 						String[] coordstext = new String[4];
 						coordstext = newline.split("\\s+");
@@ -143,7 +154,7 @@ public class ModelObj extends Model
 							coords[i-1] = Float.valueOf(coordstext[i]).floatValue();
 						}
 						vertexsetsnorms.add(coords);
-					}*/
+					}
 					if (newline.charAt(0) == 'f' && newline.charAt(1) == ' ') 
 					{
 						String[] coordstext = newline.split("\\s+");
@@ -172,7 +183,7 @@ public class ModelObj extends Model
 						}
 						faces.add(v);
 						facestexs.add(vt);
-						//facesnorms.add(vn);
+						facesnorms.add(vn);
 					}
 				}
 			}
@@ -236,37 +247,42 @@ public class ModelObj extends Model
 	
 	
 	private int vaoId;
+	
 	private int vboId;
 	public ArrayList<VertexData> data = new ArrayList<>();
 	
 	public void compileVBO()
 	{
-		
+		ArrayList<VertexData> data = new ArrayList<>();
+		//Assemble face indice
 		for (int i = 0; i < faces.size(); i++)
 		{
 			int[] tempfaces = faces.get(i);
 			int[] tempfacestexs = facestexs.get(i);
-
+			int[] tempfacesnorms = facestexs.get(i);
+			
 			for (int w = 0; w < tempfaces.length; w++)
 			{
-				VertexData temp = new VertexData();
-				if (tempfacestexs[w] != 0)
+				VertexData newv = new VertexData();
+				////////Vertex////////
+				newv.setXYZ(vertexsets.get(tempfaces[w] - 1)[0], vertexsets.get(tempfaces[w] - 1)[1], vertexsets.get(tempfaces[w] - 1)[2]);
+				
+			    ////////Texture coords////////
+				if(tempfacestexs[w] < vertexsetstexs.size())
 				{
-					float textempx = ((float[]) vertexsetstexs.get(tempfacestexs[w] - 1))[0];
-					float textempy = ((float[])vertexsetstexs.get(tempfacestexs[w] - 1))[1];
-					//float textempz = ((float[]) vertexsetstexs.get(tempfacestexs[w] - 1))[2];
-					temp.setST(textempx, textempy);
-
+					newv.setST(vertexsetstexs.get(tempfacestexs[w] - 1)[0], vertexsetstexs.get(tempfacestexs[w] - 1)[1]);
 				}
-
-				float tempx = vertexsets.get(tempfaces[w] - 1)[0];
-				float tempy = vertexsets.get(tempfaces[w] - 1)[1];
-				float tempz = vertexsets.get(tempfaces[w] - 1)[2];
-				temp.setXYZ(tempx, tempy, tempz);
-				data.add(temp);
+				
+			    ////////Normals////////
+				if(tempfacesnorms[w] < vertexsetsnorms.size())
+				{
+					newv.setNormal(vertexsetsnorms.get(tempfacesnorms[w] - 1)[0], vertexsetsnorms.get(tempfacesnorms[w] - 1)[0], vertexsetsnorms.get(tempfacesnorms[w] - 1)[0]);
+				}
+				data.add(newv);
 			}
+			numpolys++;
 		}
-		numpolys = data.size();
+		
 		// Put each 'Vertex' in one FloatBuffer
 		ByteBuffer verticesByteBuffer = BufferUtils.createByteBuffer(data.size() * VertexData.stride);				
 		FloatBuffer verticesFloatBuffer = verticesByteBuffer.asFloatBuffer();
@@ -286,34 +302,33 @@ public class ModelObj extends Model
 			{
 				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesFloatBuffer, GL15.GL_STATIC_DRAW);
 				// Put the position coordinates in attribute list 0
-				GL20.glVertexAttribPointer(0, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
+				GL20.glVertexAttribPointer(RenderEngine.VERTEX_ATTRIB_POINTER, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
 				// Put the color components in attribute list 1
-				GL20.glVertexAttribPointer(1, VertexData.colorElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.colorByteOffset);
+				GL20.glVertexAttribPointer(RenderEngine.TEXTURE_ATTRIB_POINTER, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
 				// Put the texture coordinates in attribute list 2
-				GL20.glVertexAttribPointer(2, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
+				GL20.glVertexAttribPointer(RenderEngine.NORMAL_ATTRIB_POINTER, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
 			}
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 		}
 		GL30.glBindVertexArray(0);
-		data.clear();//No longer needed
 	}
 	
 	public void draw()
 	{
 		GL30.glBindVertexArray(vaoId);
 		{
-			GL20.glEnableVertexAttribArray(0);
-			GL20.glEnableVertexAttribArray(1);
-			GL20.glEnableVertexAttribArray(2);
+			GL20.glEnableVertexAttribArray(RenderEngine.VERTEX_ATTRIB_POINTER);
+			GL20.glEnableVertexAttribArray(RenderEngine.TEXTURE_ATTRIB_POINTER);
+			GL20.glEnableVertexAttribArray(RenderEngine.NORMAL_ATTRIB_POINTER);
 			
 			// Draw the vertices
-			GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numpolys);
+			GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numpolys * 3);
 			
 			// Put everything back to default (deselect)
 			GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-			GL20.glDisableVertexAttribArray(0);
-			GL20.glDisableVertexAttribArray(1);
-			GL20.glDisableVertexAttribArray(2);
+			GL20.glDisableVertexAttribArray(RenderEngine.VERTEX_ATTRIB_POINTER);
+			GL20.glDisableVertexAttribArray(RenderEngine.TEXTURE_ATTRIB_POINTER);
+			GL20.glDisableVertexAttribArray(RenderEngine.NORMAL_ATTRIB_POINTER);
 			GL30.glBindVertexArray(0);
 		}
 	}

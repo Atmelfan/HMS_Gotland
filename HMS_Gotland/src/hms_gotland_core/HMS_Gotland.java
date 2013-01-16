@@ -22,6 +22,8 @@ import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.PixelFormat;
 import org.lwjgl.util.vector.Matrix4f;
 
+import com.bulletphysics.linearmath.MatrixUtil;
+import com.bulletphysics.linearmath.QuaternionUtil;
 import com.bulletphysics.linearmath.Transform;
 
 
@@ -64,8 +66,8 @@ public class HMS_Gotland
 	
 	private Camera camera;
 	private Level level;
+	private Settings settings = new Settings();
 	
-	public ModelPool models = new ModelPool();
 	private long lastTick;
 	
 	public HMS_Gotland() 
@@ -82,7 +84,8 @@ public class HMS_Gotland
 		camera.setPos(new org.lwjgl.util.vector.Vector3f(0, -2, -10));
 		setupMatrices();
 		
-		setupQuad();
+		level = new Level("test", this);
+		
 		setupShaders();
 		setupTextures();
 		
@@ -156,12 +159,6 @@ public class HMS_Gotland
 		GL11.glDepthFunc(GL11.GL_LESS);
 	}
 	
-	private void setupQuad() {
-		// We'll define our quad using 4 vertices of the custom 'TexturedVertex' class
-		level = new Level("test", this);
-		// Set the default quad rotation, scale and position values
-	}
-	
 	private void setupShaders() {		
 		// Load the vertex shader
 		vsId = ShaderUtils.makeShader(ShaderUtils.loadText("Resources/shaders/default.vert"), GL20.GL_VERTEX_SHADER);
@@ -174,9 +171,9 @@ public class HMS_Gotland
 		// Position information will be attribute 0
 		GL20.glBindAttribLocation(pId, 0, "in_Position");
 		// Color information will be attribute 1
-		GL20.glBindAttribLocation(pId, 1, "in_Color");
+		GL20.glBindAttribLocation(pId, 1, "in_TextureCoord");
 		// Textute information will be attribute 2
-		GL20.glBindAttribLocation(pId, 2, "in_TextureCoord");
+		GL20.glBindAttribLocation(pId, 2, "in_Normal");
 		// Get matrices uniform locations
 		projectionMatrixLocation = GL20.glGetUniformLocation(pId, "projectionMatrix");
 		viewMatrixLocation = GL20.glGetUniformLocation(pId, "viewMatrix");
@@ -186,8 +183,8 @@ public class HMS_Gotland
 	}
 	
 	private void logicCycle() {
+		float posDelta = 2;
 		//-- Input processing
-		float posDelta = 0.1f;
 		
 		while(Mouse.next())
 		{
@@ -201,8 +198,7 @@ public class HMS_Gotland
 		
 		if(Mouse.isGrabbed())
 		{
-			level.player.getBody().applyTorque(new Vector3f(Mouse.getDY() / 5, Mouse.getDX() / 5, 0));
-			
+			camera.setAngle(new org.lwjgl.util.vector.Vector3f(Mouse.getY(), Mouse.getEventX(), 0));
 		}
 		
 		//Vector3f angle = VectorUtil.toBulletVector(camera.angle);
@@ -240,7 +236,7 @@ public class HMS_Gotland
 				 * Movement keys
 				 */
 			case Keyboard.KEY_W:
-				//getPlayer().move(new Vector3f(0, 0, posDelta), angle);
+				getPlayer().move(new Vector3f(0, 0, posDelta));
 				break;
 			case Keyboard.KEY_S:
 				//getPlayer().move(new Vector3f(0, 0, -posDelta), angle);;
@@ -269,8 +265,9 @@ public class HMS_Gotland
 		// Upload matrices to the uniform variables
 		GL20.glUseProgram(pId);
 		{
-			getCamera().uploadBuffer(projectionMatrixLocation, Camera.PROJECTION_MATRIX);
 			getCamera().uploadBuffer(viewMatrixLocation, Camera.VIEW_MATRIX);
+			getCamera().uploadBuffer(projectionMatrixLocation, Camera.PROJECTION_MATRIX);
+			
 			modelMatrix.store(matrix44Buffer); matrix44Buffer.flip();
 			GL20.glUniformMatrix4(modelMatrixLocation, false, matrix44Buffer);
 		}

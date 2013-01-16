@@ -1,49 +1,50 @@
 package entity;
 
-import hms_gotland_core.HMS_Gotland;
-
+import javax.vecmath.Matrix3f;
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
 
+import level.Level;
+
+import com.bulletphysics.linearmath.MatrixUtil;
+import com.bulletphysics.linearmath.QuaternionUtil;
 import com.bulletphysics.linearmath.Transform;
+import com.bulletphysics.linearmath.VectorUtil;
 
 public class EntityPlayer extends Entity
 {
 
-	public EntityPlayer(HMS_Gotland gotland, Vector3f pos)
+	public EntityPlayer(Level level, Vector3f pos)
 	{
-		super(gotland, pos);
+		super(level, pos);
+		body.setGravity(new Vector3f(0, 0, 0));
 	}
 	
 	
-	public void move(Vector3f pos, Vector3f angle)
+	/* (non-Javadoc)
+	 * @see entity.Entity#getMass()
+	 */
+	@Override
+	protected float getMass()
 	{
-		body.applyCentralForce(pos);
-		angle(angle.x, new Vector3f(1, 0, 0));
-		
+		return 1f;
+	}
+
+
+	public void move(Vector3f pos)
+	{
+		Vector3f res = QuaternionUtil.quatRotate(getWorldTransform().getRotation(new Quat4f()), pos, new Vector3f(1, 1, 1));
+		body.applyCentralForce(res);
+		System.out.println(res);
 	}
 	
 	public void angle(float angle, Vector3f axis)
 	{
-		Quat4f quat = new Quat4f();
+		Transform tr = new Transform();
 		
-		quat.w = (float) Math.cos(Math.toRadians(angle));
-	    quat.x = (float) (axis.x*Math.sin(Math.toRadians(angle)));
-	    quat.y = (float) (axis.y*Math.sin(Math.toRadians(angle)));
-	    quat.z = (float) (axis.z*Math.sin(Math.toRadians(angle)));
-	    
-	    Transform tr = getBodyTransform();
-	    tr.setRotation(quat);
-	    body.setWorldTransform(tr);
-	}
-	
-	/* (non-Javadoc)
-	 * @see entity.Entity#tick()
-	 */
-	@Override
-	public void tick()
-	{
-		super.tick();
+		body.getWorldTransform(tr);
+		MatrixUtil.setEulerZYX(tr.basis, angle * axis.x, angle * axis.y, angle * axis.z);
+		body.setWorldTransform(tr);
 	}
 
 	/* (non-Javadoc)

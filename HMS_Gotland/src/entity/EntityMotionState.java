@@ -20,7 +20,13 @@ public class EntityMotionState extends MotionState
 	@Override
 	public Transform getWorldTransform(Transform arg0)
 	{
-		return (arg0 = transform);
+		arg0.set(transform);
+		return arg0;
+	}
+	
+	public Transform getWorldTransform()
+	{
+		return transform;
 	}
 
 	@Override

@@ -1,5 +1,10 @@
 package Util;
 
+import javax.vecmath.Vector3f;
+
+import org.lwjgl.util.vector.Matrix3f;
+import org.lwjgl.util.vector.Matrix4f;
+
 
 
 public class VectorUtil
@@ -14,3 +19,4 @@ public class VectorUtil
 		return new javax.vecmath.Vector3f(in.x, in.y, in.z);
 	}
 }
+

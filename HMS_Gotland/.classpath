@@ -2,11 +2,23 @@
 <classpath>
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER/org.eclipse.jdt.internal.debug.ui.launcher.StandardVMType/JavaSE-1.7"/>
-	<classpathentry kind="lib" path="Resources/jbullet.jar"/>
+	<classpathentry kind="lib" path="Resources/jbullet.jar" sourcepath="C:/Users/Atmelfan/Desktop/javadocs/jbullet-src">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/C:/Users/Atmelfan/Desktop/javadocs/jbullet-javadoc/"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="Resources/jinput.jar"/>
 	<classpathentry kind="lib" path="Resources/lwjgl_util.jar"/>
-	<classpathentry kind="lib" path="Resources/lwjgl.jar"/>
-	<classpathentry kind="lib" path="Resources/vecmath.jar"/>
+	<classpathentry kind="lib" path="Resources/lwjgl.jar" sourcepath="C:/Users/Atmelfan/Desktop/javadocs/lwjgl-src">
+		<attributes>
+			<attribute name="javadoc_location" value="file:/C:/Users/Atmelfan/Desktop/javadocs/lwjgl-javadoc/"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="Resources/vecmath.jar">
+		<attributes>
+			<attribute name="javadoc_location" value="http://docs.oracle.com/cd/E17802_01/j2se/javase/technologies/desktop/java3d/forDevelopers/J3D_1_3_API/j3dapi/index.html"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="lib" path="Resources/PNGDecoder.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

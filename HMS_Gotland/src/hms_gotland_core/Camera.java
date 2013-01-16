@@ -5,10 +5,20 @@
 package hms_gotland_core;
 
 import java.nio.FloatBuffer;
+
+import javax.vecmath.Quat4f;
+
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
+
+import Util.GLUtil;
+import Util.VectorUtil;
+
+import com.bulletphysics.linearmath.MatrixUtil;
+import com.bulletphysics.linearmath.Transform;
 
 import entity.Entity;
 
@@ -55,7 +65,14 @@ public class Camera
 		viewMatrix.rotate((float) Math.toRadians(angle.y), new Vector3f(0, 1, 0));
 		viewMatrix.rotate((float) Math.toRadians(angle.x), new Vector3f(1, 0, 0));
 		
-		viewMatrix.translate(pos);
+		if(owner != null)
+		{
+			viewMatrix.translate(VectorUtil.toLWJGLVector(owner.getPos()));
+		}else
+		{
+			viewMatrix.translate(pos);
+		}
+		
 	}
 
 	private void setupMatrices(float width, float height, float near, float far)
@@ -85,13 +102,7 @@ public class Camera
 		switch(targetMatrix)
 		{
 		case VIEW_MATRIX:
-			if(owner != null)
-			{
-				tempBuffer.put(owner.getModelMatrix()); tempBuffer.flip();
-			}else
-			{
-				viewMatrix.store(tempBuffer); tempBuffer.flip();
-			}
+			viewMatrix.store(tempBuffer); tempBuffer.flip();
 			GL20.glUniformMatrix4(matrixPos, false, tempBuffer);
 			break;
 		case PROJECTION_MATRIX:
@@ -99,7 +110,7 @@ public class Camera
 			GL20.glUniformMatrix4(matrixPos, false, tempBuffer);
 			break;
 		case THE_MATRIX:
-			System.err.println("Error.");
+			System.err.println("Error, insufficent power.");
 			break;
 		default:
 			break;
