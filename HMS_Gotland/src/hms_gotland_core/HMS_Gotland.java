@@ -73,11 +73,13 @@ public class HMS_Gotland
 	public void run()
 	{
 		setupOpenGL();
-		System.out.println("====================INFO==================== ");
+		System.out.println("==========================INFO==========================");
 		System.out.println("Operating system: " + System.getProperty("os.name"));
+		System.out.println("System architecture: "  + System.getProperty("os.arch"));
 		System.out.println("Graphics card: " + GL11.glGetString(GL11.GL_VENDOR));
 		System.out.println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION));
 		System.out.println("Shader version: " + GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION));
+		System.out.println("==========================INFO==========================");
 		setCamera(new Camera(WIDTH, HEIGHT, 0.1f, 1000f));
 		camera.setPos(new org.lwjgl.util.vector.Vector3f(0, -2, -10));
 		setupMatrices();

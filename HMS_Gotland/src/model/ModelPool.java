@@ -31,7 +31,7 @@ public class ModelPool
 			return false;
 		}
 		ModelObj model = new ModelObj(file, true);
-		System.out.println("ModelPool::load(" +  file.getName() + ") - " + (model == null ? "Failed!" : "Success!"));
+		System.out.println("ModelPool::load(" +  file.getName() + ") - ");
 		return models.put(name, model) != null;
 	}
 	
@@ -47,8 +47,12 @@ public class ModelPool
 		//Loop, load and store all models into hashmap
 		for (int i = 0; i < files.length; i++)
 		{
-			System.out.println("ModelPool::load(" +  files[i].getName() + ") - " + 
-			(models.put(files[i].getName(), new ModelObj(files[i], true)) == null ? "Failed!" : "Success!"));
+			if(files[i].getName().endsWith(".obj"))
+			{
+				System.out.println("ModelPool::load(" +  files[i].getName() + ") - " + 
+						(models.put(files[i].getName(), new ModelObj(files[i], true)) == null ? "Failed!" : "Success!"));
+			}
+			
 		}
 		
 		return true;
@@ -60,7 +64,7 @@ public class ModelPool
 		@Override
 		public boolean accept(File arg0, String arg1)
 		{
-			return arg1.endsWith(".obj");
+			return arg1.endsWith(".obj") || arg1.endsWith(".md2");
 		}
 		
 	};

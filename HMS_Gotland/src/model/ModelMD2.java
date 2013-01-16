@@ -1,21 +1,40 @@
 package model;
 
+import hms_gotland_core.RenderEngine;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.util.ArrayList;
+
+import org.lwjgl.BufferUtils;
+import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL15;
+import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
+
+import Util.ShaderUtils;
+import Util.VertexData;
 
 
 public class ModelMD2 extends Model
 {
 	public MD2_Header 		header;
 	
-	public MD2_ST[] 		st;
+	public MD2_ST[] 		textureCoords;
 	private MD2_Triangle[] 	triangles;
 	private MD2_Frame[] 	frames;
 	private MD2_Skin[] 		skins;
+	
+	private int vao_id = GL30.glGenVertexArrays();
+	private int[] frame_ids;
+
+	private int shader_id;
 	
 	public void draw()
 	{
@@ -24,7 +43,96 @@ public class ModelMD2 extends Model
 	
 	public void draw(float frame)
 	{
+		if(frame < 0 || frame > header.num_frames - 1) return;
+			
+		//Select current frame and next
+		int frame_0 = frame_ids[(int) Math.floor(frame)];
+		int frame_1 = frame_ids[(int)  Math.ceil(frame)];
+		//Upload frame interpolation
+		ShaderUtils.setUniformVar(shader_id, "frame_interpolated", (float)(frame - Math.floor(frame)));
 		
+		GL30.glBindVertexArray(vao_id);
+		{
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, frame_0);//Bind frame 0
+			{
+				GL20.glVertexAttribPointer(0, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
+				GL20.glVertexAttribPointer(1, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
+				GL20.glVertexAttribPointer(2, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
+			}
+			
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, frame_1);//Bind frame 1
+			{
+				GL20.glVertexAttribPointer(3, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
+				GL20.glVertexAttribPointer(4, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
+				GL20.glVertexAttribPointer(5, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
+			}
+			
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+			
+			//Enable attribs and render
+			for(int i = 0; i < 6; i++){ GL20.glEnableVertexAttribArray(i); }
+			{
+				GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, header.num_tris);
+			}
+			for(int i = 0; i < 6; i++){ GL20.glDisableVertexAttribArray(i); }
+			
+		}
+		GL30.glBindVertexArray(0);
+		
+		//TODO
+		
+	}
+	
+	public void compileVBO()
+	{
+		ArrayList<VertexData> data = new ArrayList<>();
+		for(int k = 0; k < header.num_frames; k++)
+		{
+			MD2_Frame frame = frames[k];// Current frame
+			for (int i = 0; i < header.num_tris; i++)
+			{
+				for (int j = 0; j < 3; j++)
+				{
+					VertexData temp = new VertexData();
+					//Extract position from vertex array using triangles vertex index
+					MD2_Vertex vertex = frame.vertices[triangles[i].vertexIndex[j]];
+					temp.setXYZ(vertex.v[0], vertex.v[1], vertex.v[2]);
+					
+					//Extract texture coords from st array using triangle texture index
+					float s = textureCoords[triangles[i].textureIndex[j]].s / header.width;
+					float t = textureCoords[triangles[i].textureIndex[j]].t / header.height;
+					temp.setST(s, t);
+					
+					//TODO normals
+					//
+					
+					data.add(temp);//Add vertex data
+				}
+			}
+			//Put data into floatbuffer
+			ByteBuffer verticesByteBuffer = BufferUtils.createByteBuffer(data.size() * VertexData.stride);				
+			FloatBuffer verticesFloatBuffer = verticesByteBuffer.asFloatBuffer();
+			for (int i = 0; i < data.size(); i++) 
+			{
+				// Add position, normal and texture floats to the buffer
+				verticesFloatBuffer.put(data.get(i).getElements());
+			}
+			verticesFloatBuffer.flip();
+			
+			//Put data into its vbo
+			int id = GL15.glGenBuffers();
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, id);
+			{
+				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesFloatBuffer, GL15.GL_STATIC_DRAW);
+			}
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+			
+			//Clear data for next frame
+			data.clear();
+			
+			//Save frame id
+			frame_ids[k] = id;
+		}
 	}
 	
 	public void read(File file)
@@ -35,6 +143,12 @@ public class ModelMD2 extends Model
 			////////Read header////////
 			header = new MD2_Header();
 			header.read(data);
+			
+			//Allocate frame ids
+			frame_ids = new int[header.num_frames];
+			
+			if(header.ident != (('2'<<24) + ('P'<<16) + ('D'<<8) + 'I') || header.version != 8)
+				throw new IllegalArgumentException("Invalid MD2 version!");
 			
 		    ////////Read skins////////
 			data.seek(header.ofs_skins);
@@ -48,10 +162,10 @@ public class ModelMD2 extends Model
 			////////Read st////////
 			data.seek(header.ofs_st);
 			
-			st = new MD2_ST[header.num_st];
+			textureCoords = new MD2_ST[header.num_st];
 			for(int i = 0; i < header.num_st; i++)
 			{
-				st[i] = new MD2_ST().read(data);
+				textureCoords[i] = new MD2_ST().read(data);
 			}
 			
 			//Read triangles////////
@@ -121,14 +235,11 @@ public class ModelMD2 extends Model
 			//Version
 			ident 		= data.readInt();
 			version 	= data.readInt();
-			
 			//Texture
 			height 		= data.readInt();
 			width 		= data.readInt();
-			
 			//Frame
 			frameSize 	= data.readInt();
-			
 			//Nums
 			num_skins 	= data.readInt();
 			num_xyz 	= data.readInt();
@@ -136,7 +247,6 @@ public class ModelMD2 extends Model
 			num_tris 	= data.readInt();
 			num_glcmds 	= data.readInt();
 			num_frames 	= data.readInt();
-			
 			//Ofs
 			ofs_skins 	= data.readInt();
 			ofs_st 		= data.readInt();
