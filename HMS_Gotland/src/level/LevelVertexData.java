@@ -7,6 +7,10 @@ import javax.vecmath.Vector3f;
 
 import com.bulletphysics.collision.shapes.VertexData;
 
+/*
+ * @author atmelfan
+ * Contains triangel data for level graphics & physics
+ */
 public class LevelVertexData extends VertexData
 {
 
