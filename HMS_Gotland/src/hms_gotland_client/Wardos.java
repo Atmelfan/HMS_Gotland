@@ -123,23 +123,13 @@ public class Wardos
 				1f, -1f, 0f,	// Right bottom		ID: 2
 				1f, 1f, 0f		// Right left		ID: 3
 		};
-		// Sending data to OpenGL requires the usage of (flipped) byte buffers
-		FloatBuffer verticesBuffer = BufferUtils.createFloatBuffer(vertices.length);
-		verticesBuffer.put(vertices);
-		verticesBuffer.flip();
-		
-		// Vertices, the order is not important.
+		// Texcoords, the order is not important.
 		float[] texture = {
 				0, 0,	// Left top			ID: 0
 				0, 1,	// Left bottom		ID: 1
 				1, 1,	// Right bottom		ID: 2
 				1, 0,	// Right left		ID: 3
 		};
-		// Sending data to OpenGL requires the usage of (flipped) byte buffers
-		FloatBuffer textureBuffer = BufferUtils.createFloatBuffer(texture.length);
-		textureBuffer.put(texture);
-		textureBuffer.flip();
-		
 		// OpenGL expects to draw vertices in counter clockwise order by default
 		byte[] indices = {
 				// Left bottom triangle
@@ -161,13 +151,13 @@ public class Wardos
 			// A VBO is a collection of Vectors which in this case resemble the location of each vertex.
 			vbovId = GL15.glGenBuffers();
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbovId);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesBuffer, GL15.GL_STREAM_DRAW);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, GLUtil.buffer(vertices), GL15.GL_STREAM_DRAW);
 			// Put the VBO in the attributes list at index 0
 			GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
 			
 			vbocId = GL15.glGenBuffers();
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbocId);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, textureBuffer, GL15.GL_STATIC_DRAW);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, GLUtil.buffer(texture), GL15.GL_STATIC_DRAW);
 			// Put the VBO in the attributes list at index 0
 			GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 0, 0);
 			
@@ -178,7 +168,7 @@ public class Wardos
 		// Create a new VBO for the indices and select it (bind)
 		vboiId = GL15.glGenBuffers();
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
-		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL15.GL_STATIC_DRAW);
+		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, GLUtil.buffer(indices), GL15.GL_STATIC_DRAW);
 		// Deselect (bind to 0) the VBO
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);		
 	}

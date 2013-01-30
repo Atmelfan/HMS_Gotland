@@ -4,7 +4,10 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
+import java.nio.IntBuffer;
 
+import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
@@ -113,10 +116,50 @@ public class GLUtil
 
 		// Setup what to do when the texture has to be scaled
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_NEAREST);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
 
 		return texId;
 	}
+	
+	/**
+	 * Creates and flips an buffer with the specified values
+	 * @param values
+	 * @return A buffer
+	 */
+	public static FloatBuffer buffer(float... values)
+	{
+		FloatBuffer temp = BufferUtils.createFloatBuffer(values.length);
+		temp.put(values);
+		temp.flip();
+		return temp;
+	}
+	
+	/**
+	 * Creates and flips an buffer with the specified values
+	 * @param values
+	 * @return A buffer
+	 */
+	public static IntBuffer buffer(int... values)
+	{
+		IntBuffer temp = BufferUtils.createIntBuffer(values.length);
+		temp.put(values);
+		temp.flip();
+		return temp;
+	}
+	
+	/**
+	 * Creates and flips an buffer with the specified values
+	 * @param values
+	 * @return A buffer
+	 */
+	public static ByteBuffer buffer(byte... values)
+	{
+		ByteBuffer temp = BufferUtils.createByteBuffer(values.length);
+		temp.put(values);
+		temp.flip();
+		return temp;
+	}
+	
 	/**
 	 * Sigh...
 	 * @param from
@@ -146,4 +189,6 @@ public class GLUtil
 		retur.m30 = from.m30; retur.m31 = from.m31; retur.m32 = from.m32; retur.m33 = from.m33;
 		return retur;
 	}
+
+	
 }
