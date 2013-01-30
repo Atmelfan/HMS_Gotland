@@ -30,8 +30,19 @@ public class ModelPool
 			System.out.println("ModelPool::file does not exist(" + file.getAbsolutePath() + ")");
 			return false;
 		}
-		ModelObj model = new ModelObj(file, true);
-		System.out.println("ModelPool::load(" +  file.getName() + ") - ");
+		Model model = null;
+		
+		if(file.getName().endsWith(".obj"))
+		{
+			model = new ModelObj(file, true);
+		}
+		else if(file.getName().endsWith(".md2"))
+		{
+			System.out.println("k");
+			model = new ModelMD2(file, true);
+		}
+		
+		System.out.println("ModelPool::load(" +  file.getName() + ")");
 		return models.put(name, model) != null;
 	}
 	
@@ -52,6 +63,11 @@ public class ModelPool
 				System.out.println("ModelPool::load(" +  files[i].getName() + ") - " + 
 						(models.put(files[i].getName(), new ModelObj(files[i], true)) == null ? "Failed!" : "Success!"));
 			}
+			else if(files[i].getName().endsWith(".md2"))
+			{
+				System.out.println("ModelPool::load(" +  files[i].getName() + ") - " + 
+						(models.put(files[i].getName(), new ModelMD2(files[i], true)) == null ? "Failed!" : "Success!"));
+			}
 			
 		}
 		
@@ -68,4 +84,10 @@ public class ModelPool
 		}
 		
 	};
+
+	public void destroyUnused()
+	{
+		// TODO Auto-generated method stub
+		
+	}
 }

@@ -2,7 +2,7 @@ package model;
 
 public class Model
 {
-	public void draw()
+	public void draw(float frame, float[] vpMatrix, float[] modelMatrix)
 	{
 	}
 	
@@ -12,16 +12,22 @@ public class Model
 	
 	public float getXWidth()
 	{
-		return 0;
+		return 1;
 	}
 	
 	public float getYHeight()
 	{
-		return 0;
+		return 1;
 	}
 	
 	public float getZDepth() 
 	{
-		return 0;
+		return 1;
+	}
+
+	//Default model isn't animated
+	public boolean isAnimated()
+	{
+		return false;
 	}
 }

@@ -1,90 +1,201 @@
 package model;
 
-import hms_gotland_core.RenderEngine;
-
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.RandomAccessFile;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 
+import javax.vecmath.Vector3f;
+
 import org.lwjgl.BufferUtils;
+import org.lwjgl.LWJGLException;
+import org.lwjgl.opengl.ContextAttribs;
+import org.lwjgl.opengl.Display;
+import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.PixelFormat;
 
+import Util.GLUtil;
+import Util.OSUtil;
 import Util.ShaderUtils;
 import Util.VertexData;
 
-
+/**
+ * @author Atmelfan
+ * Blablabla license blablabla don't give a shit
+ * blablablabla blabla bla blabla
+ * Provided as is, if you fuck up, it's your own damn fault.
+ */
 public class ModelMD2 extends Model
 {
-	public MD2_Header 		header;
+	/*Bounding box*/
+	public Vector3f boundingBoxMin;
+	public Vector3f boundingBoxMax;
 	
-	public MD2_ST[] 		textureCoords;
+	/*MD2 data*/
+	private MD2_Header 		header;
+	private MD2_ST[] 		textureCoords;
 	private MD2_Triangle[] 	triangles;
 	private MD2_Frame[] 	frames;
 	private MD2_Skin[] 		skins;
 	
+	/*OpenGL data*/
+	private int tex_id;
 	private int vao_id = GL30.glGenVertexArrays();
 	private int[] frame_ids;
-
-	private int shader_id;
+	private static int shader_id = 0;
+	private static int vsId = 0;
+	private static int fsId = 0;
 	
-	public void draw()
+	public ModelMD2(File file, boolean b)
 	{
-		System.err.println("MD2 requires frame data! How many times have I done this now!?");
+		//Read MD2 data file
+		read(file);
+		//Print MD2 info
+		//System.out.println(header.toString());
+		//Assemble frames into VBOs
+		compileVBO();
+		//Setup class static interpolation & translation shader if not done yet
+		if(shader_id <= 0)
+		{
+			setupShader();
+		}
+	}
+
+	private ModelMD2()
+	{//Testing constructor...
+	}
+
+	public static void main(String[] args)
+	{
+		System.setProperty("org.lwjgl.librarypath",System.getProperty("user.dir") + File.separator + "Resources" + File.separator + "native" + File.separator + OSUtil.getOS());
+		try 
+		{
+			PixelFormat pixelFormat = new PixelFormat(24, 8, 8, 0, GLUtil.getMaxSamplings());
+			ContextAttribs contextAtrributes = new ContextAttribs(3, 2);
+			contextAtrributes.withForwardCompatible(true);
+			contextAtrributes.withProfileCore(true);
+			
+			Display.setDisplayMode(new DisplayMode(1, 1));
+			Display.create(pixelFormat, contextAtrributes);
+			
+			GL11.glViewport(0, 0, 1, 1);
+		}catch(LWJGLException e) {
+			e.printStackTrace();
+			System.exit(-1);
+		}
+		
+		ModelMD2 m = new ModelMD2();
+		m.read(new File("Resources/models/fighter.md2"));
+		System.out.println(m.header.toString());
+		m.compileVBO();
 	}
 	
-	public void draw(float frame)
+	public void setupShader()
 	{
-		if(frame < 0 || frame > header.num_frames - 1) return;
+		vsId = ShaderUtils.makeShader(ShaderUtils.loadText("Resources/shaders/animation.vert"), GL20.GL_VERTEX_SHADER);
+		// Load the fragment shader
+		fsId = ShaderUtils.makeShader(ShaderUtils.loadText("Resources/shaders/animation.frag"), GL20.GL_FRAGMENT_SHADER);
+		
+		// Create a new shader program that links both shaders
+		shader_id = ShaderUtils.makeProgram(vsId, fsId);
+		
+		GL20.glBindAttribLocation(shader_id, 0, "in_Position_0");
+		GL20.glBindAttribLocation(shader_id, 1, "in_TextureCoord_0");
+		GL20.glBindAttribLocation(shader_id, 2, "in_Normal_0");
+		
+		GL20.glBindAttribLocation(shader_id, 3, "in_Position_1");
+		GL20.glBindAttribLocation(shader_id, 4, "in_TextureCoord_1");
+		GL20.glBindAttribLocation(shader_id, 5, "in_Normal_1");
+		
+		GL20.glValidateProgram(shader_id);
+	}
+	
+	public void destroy()
+	{
+		//Delete VAO
+		GL30.glBindVertexArray(vao_id);
+		{
+			for(int i = 0; i < 6; i++){ GL20.glDisableVertexAttribArray(i);}
+			
+			//Delete VBOs
+			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+			for (int i = 0; i < frame_ids.length; i++)
+			{
+				GL15.glDeleteBuffers(frame_ids[i]);
+			}
+		}
+		GL30.glBindVertexArray(0);
+		GL30.glDeleteVertexArrays(vao_id);
+	}
+
+	@Override
+	public void draw(float frame, float[] vpMatrix, float[] matrix)
+	{
+		//if(frame < 0 || frame > header.num_frames - 1) return;
 			
 		//Select current frame and next
 		int frame_0 = frame_ids[(int) Math.floor(frame)];
-		int frame_1 = frame_ids[(int)  Math.ceil(frame)];
+		
+		int frame_1 = frame_ids[(int) Math.min(Math.ceil(frame), header.num_frames - 1)];
 		//Upload frame interpolation
-		ShaderUtils.setUniformVar(shader_id, "frame_interpolated", (float)(frame - Math.floor(frame)));
 		
-		GL30.glBindVertexArray(vao_id);
+		ShaderUtils.useProgram(shader_id);
 		{
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, frame_0);//Bind frame 0
+			//Upload uniform values
+			ShaderUtils.setUniformMatrix4(shader_id, "viewprojMatrix", vpMatrix);
+			ShaderUtils.setUniformMatrix4(shader_id, "modelMatrix", matrix);
+			ShaderUtils.setUniformVar(shader_id, "frame_interpolated", (float)(frame - Math.floor(frame)));
+			//Bind frames to VAO
+			GL30.glBindVertexArray(vao_id);
 			{
-				GL20.glVertexAttribPointer(0, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
-				GL20.glVertexAttribPointer(1, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
-				GL20.glVertexAttribPointer(2, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, frame_0);//Bind frame 0
+				{
+					GL20.glVertexAttribPointer(0, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
+					GL20.glVertexAttribPointer(1, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
+					GL20.glVertexAttribPointer(2, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
+				}
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+				
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, frame_1);//Bind frame 1
+				{
+					GL20.glVertexAttribPointer(3, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
+					GL20.glVertexAttribPointer(4, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
+					GL20.glVertexAttribPointer(5, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
+				}
+				
+				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+				
+				//Enable attribs and render
+				for(int i = 0; i < 6; i++){ GL20.glEnableVertexAttribArray(i); }
+				{
+					GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, header.num_tris);
+				}
+				for(int i = 0; i < 6; i++){ GL20.glDisableVertexAttribArray(i); }
+				
+				
 			}
-			
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, frame_1);//Bind frame 1
-			{
-				GL20.glVertexAttribPointer(3, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
-				GL20.glVertexAttribPointer(4, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
-				GL20.glVertexAttribPointer(5, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
-			}
-			
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-			
-			//Enable attribs and render
-			for(int i = 0; i < 6; i++){ GL20.glEnableVertexAttribArray(i); }
-			{
-				GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, header.num_tris);
-			}
-			for(int i = 0; i < 6; i++){ GL20.glDisableVertexAttribArray(i); }
-			
+			GL30.glBindVertexArray(0);
 		}
-		GL30.glBindVertexArray(0);
-		
-		//TODO
-		
+		ShaderUtils.useProgram(0);
 	}
-	
+	@Override
+	public boolean isAnimated()
+	{
+		return true;
+	}
+
 	public void compileVBO()
 	{
+		frame_ids = new int[header.num_frames];
 		ArrayList<VertexData> data = new ArrayList<>();
 		for(int k = 0; k < header.num_frames; k++)
 		{
@@ -99,12 +210,18 @@ public class ModelMD2 extends Model
 					temp.setXYZ(vertex.v[0], vertex.v[1], vertex.v[2]);
 					
 					//Extract texture coords from st array using triangle texture index
-					float s = textureCoords[triangles[i].textureIndex[j]].s / header.width;
-					float t = textureCoords[triangles[i].textureIndex[j]].t / header.height;
+					float s = (float)textureCoords[triangles[i].textureIndex[j]].s / header.width;
+					float t = (float)textureCoords[triangles[i].textureIndex[j]].t / header.height;
 					temp.setST(s, t);
 					
-					//TODO normals
-					//
+					//Normals, why hardcoded?
+					int index = frame.vertices[triangles[i].vertexIndex[j]].lightNormalIndex;
+					//Some models seems to use a different normal array and doesn't work with Quake II normals
+					if(index < ModelMD2_Normals.normals.length)
+					{
+						float[] n = ModelMD2_Normals.normals[index];
+						temp.setNormal(n[0], n[1], n[2]);
+					}
 					
 					data.add(temp);//Add vertex data
 				}
@@ -139,19 +256,19 @@ public class ModelMD2 extends Model
 	{
 		try
 		{
-			RandomAccessFile data = new RandomAccessFile(file, null);
+			DataInputStream data = new DataInputStream(new FileInputStream(file));
 			////////Read header////////
 			header = new MD2_Header();
 			header.read(data);
 			
 			//Allocate frame ids
-			frame_ids = new int[header.num_frames];
+			//frame_ids = new int[header.num_frames];
 			
 			if(header.ident != (('2'<<24) + ('P'<<16) + ('D'<<8) + 'I') || header.version != 8)
-				throw new IllegalArgumentException("Invalid MD2 version!");
+				System.err.println("Invalid magic or version, file may be invalid or corrupted!");
 			
 		    ////////Read skins////////
-			data.seek(header.ofs_skins);
+			//data.seek(header.ofs_skins); No seek command in datainputstream
 			
 			skins = new MD2_Skin[header.num_skins];
 			for(int i = 0; i < header.num_skins; i++)
@@ -160,7 +277,7 @@ public class ModelMD2 extends Model
 			}
 			
 			////////Read st////////
-			data.seek(header.ofs_st);
+			//data.seek(header.ofs_st);
 			
 			textureCoords = new MD2_ST[header.num_st];
 			for(int i = 0; i < header.num_st; i++)
@@ -169,7 +286,7 @@ public class ModelMD2 extends Model
 			}
 			
 			//Read triangles////////
-			data.seek(header.ofs_tris);
+			//data.seek(header.ofs_tris);
 			
 			triangles = new MD2_Triangle[header.num_tris];
 			for(int i = 0; i < header.num_tris; i++)
@@ -178,7 +295,7 @@ public class ModelMD2 extends Model
 			}
 			
 			////////Read frames////////
-			data.seek(header.ofs_frames);
+			//data.seek(header.ofs_frames);
 			
 			frames = new MD2_Frame[header.num_frames];
 			for(int i = 0; i < header.num_frames; i++)
@@ -187,7 +304,7 @@ public class ModelMD2 extends Model
 			}
 			
 			////////Read OpenGL cmds////////
-			//TODO implement replacement using OpenGL 3
+			//TODO implement replacement using OpenGL 3 maybe?
 			
 			data.close();
 		} catch (FileNotFoundException e)
@@ -230,45 +347,54 @@ public class ModelMD2 extends Model
 		int ofs_frames = 0;
 		int ofs_end = 0;
 		
-		void read(RandomAccessFile data) throws IOException
+		void read(DataInputStream data) throws IOException
 		{
 			//Version
-			ident 		= data.readInt();
-			version 	= data.readInt();
+			ident 		= Integer.reverseBytes(data.readInt());
+			version 	= Integer.reverseBytes(data.readInt());
 			//Texture
-			height 		= data.readInt();
-			width 		= data.readInt();
+			height 		= Integer.reverseBytes(data.readInt());
+			width 		= Integer.reverseBytes(data.readInt());
 			//Frame
-			frameSize 	= data.readInt();
+			frameSize 	= Integer.reverseBytes(data.readInt());
 			//Nums
-			num_skins 	= data.readInt();
-			num_xyz 	= data.readInt();
-			num_st 		= data.readInt();
-			num_tris 	= data.readInt();
-			num_glcmds 	= data.readInt();
-			num_frames 	= data.readInt();
+			num_skins 	= Integer.reverseBytes(data.readInt());
+			num_xyz 	= Integer.reverseBytes(data.readInt());
+			num_st 		= Integer.reverseBytes(data.readInt());
+			num_tris 	= Integer.reverseBytes(data.readInt());
+			num_glcmds 	= Integer.reverseBytes(data.readInt());
+			num_frames 	= Integer.reverseBytes(data.readInt());
 			//Ofs
-			ofs_skins 	= data.readInt();
-			ofs_st 		= data.readInt();
-			ofs_tris 	= data.readInt();
-			ofs_glcmds 	= data.readInt();
-			ofs_frames 	= data.readInt();
-			ofs_end 	= data.readInt();
+			ofs_skins 	= Integer.reverseBytes(data.readInt());
+			ofs_st 		= Integer.reverseBytes(data.readInt());
+			ofs_tris 	= Integer.reverseBytes(data.readInt());
+			ofs_glcmds 	= Integer.reverseBytes(data.readInt());
+			ofs_frames 	= Integer.reverseBytes(data.readInt());
+			ofs_end 	= Integer.reverseBytes(data.readInt());
 		}
+
+		public String toString()
+		{
+			return 	"===MD2 header===\nmagic: " + ident + "\nver: " + version + "\nth: " + height + "\ntw: " + width + "\nframe size: " + frameSize + 
+					"\nnum frames: " + num_frames + "\nnum vertices: " + num_xyz + "\nnum texcoords: " + num_st + "\n===MD2 header===";
+		}
+		
+		
 	}
 	
 	class MD2_Skin
 	{
 		String name = "";
 		
-		MD2_Skin read(RandomAccessFile data) throws IOException
+		MD2_Skin read(DataInputStream data) throws IOException
 		{
 			char[] temp = new char[64];
-			for (int i = 0; i < 64; i++)
+			for (int i = 0; i < temp.length; i++)
 			{
-				temp[i] = data.readChar();
+				temp[i] = (char) data.readUnsignedByte();
 			}
 			name = new String(temp);
+			//tex_id = GLUtil.loadPNGTexture(name, GL13.GL_TEXTURE0);
 			return this;
 		}
 	}
@@ -276,13 +402,13 @@ public class ModelMD2 extends Model
 	/*Texture coords*/
 	class MD2_ST
 	{
-		float s = 0;
-		float t = 0;
+		int s = 0;
+		int t = 0;
 		
-		MD2_ST read(RandomAccessFile data) throws IOException
+		MD2_ST read(DataInputStream data) throws IOException
 		{
-			s = data.readFloat();
-			t = data.readFloat();
+			s = Short.reverseBytes((short) data.readUnsignedShort());
+			t = Short.reverseBytes((short) data.readUnsignedShort());
 			return this;
 		}
 	}
@@ -290,18 +416,18 @@ public class ModelMD2 extends Model
 	/*Triangle*/
 	class MD2_Triangle
 	{
-		short  vertexIndex[] = new short[3];
-		short textureIndex[] = new short[3];
+		int  vertexIndex[] = new int[3];
+		int textureIndex[] = new int[3];
 		
-		MD2_Triangle read(RandomAccessFile data) throws IOException
+		MD2_Triangle read(DataInputStream data) throws IOException
 		{
 			for (int i = 0; i < vertexIndex.length; i++)
 			{
-				vertexIndex[i] = data.readShort();
+				vertexIndex[i] = Short.reverseBytes((short) data.readUnsignedShort());
 			}
 			for (int i = 0; i < textureIndex.length; i++)
 			{
-				textureIndex[i] = data.readShort();
+				textureIndex[i] = Short.reverseBytes((short) data.readUnsignedShort());
 			}
 			
 			return this;
@@ -312,16 +438,16 @@ public class ModelMD2 extends Model
 	class MD2_Vertex
 	{
 		float[] v = new float[3];
-		char lightNormalIndex = 0;
+		int lightNormalIndex = 0;
 		
-		MD2_Vertex read(RandomAccessFile data, MD2_Frame frame) throws IOException
+		MD2_Vertex read(DataInputStream data, MD2_Frame frame) throws IOException
 		{
 			for (int i = 0; i < v.length; i++)
 			{
-				v[i] = data.readChar() * frame.scale[i] + frame.translate[i];
+				v[i] = (float)data.readUnsignedByte() * frame.scale[i] + frame.translate[i];
 			}
 			
-			lightNormalIndex = data.readChar();
+			lightNormalIndex = data.readUnsignedByte();
 			
 			return this;
 		}
@@ -335,21 +461,21 @@ public class ModelMD2 extends Model
 		char[] name = new char[16];
 		MD2_Vertex[] vertices = new MD2_Vertex[header.num_xyz];
 		
-		MD2_Frame read(RandomAccessFile data) throws IOException
+		MD2_Frame read(DataInputStream data) throws IOException
 		{
 			for (int i = 0; i < scale.length; i++)
 			{
-				scale[i] = data.readFloat();
+				scale[i] = Float.intBitsToFloat(Integer.reverseBytes(data.readInt()));
 			}
 			
 			for (int i = 0; i < translate.length; i++)
 			{
-				translate[i] = data.readFloat();
+				translate[i] = Float.intBitsToFloat(Integer.reverseBytes(data.readInt()));
 			}
 			
 			for (int i = 0; i < name.length; i++)
 			{
-				name[i] = data.readChar();
+				name[i] = (char) data.readUnsignedByte();
 			}
 			
 			for (int i = 0; i < header.num_xyz; i++)

@@ -1,6 +1,6 @@
 package model;
 
-import hms_gotland_core.RenderEngine;
+import hms_gotland_client.RenderEngine;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,10 +13,14 @@ import java.util.ArrayList;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL31;
 
+import Util.GLUtil;
+import Util.ShaderUtils;
 import Util.VertexData;
 
 /**
@@ -51,11 +55,18 @@ public class ModelObj extends Model
 	public float rightpoint = 0;	// x+
 	public float farpoint = 0;		// z-
 	public float nearpoint = 0;		// z+
+	private static int vsId;
+	private static int fsId;
+	private static int shader_id;
 	
 	public ModelObj(File file, boolean clearVertexData)
 	{
 		read(file);
 		centerit();
+		if(shader_id == 0)
+		{
+			setupShader();
+		}
 		compileVBO();
 		cleanup();
 		if(clearVertexData)
@@ -75,9 +86,24 @@ public class ModelObj extends Model
 		facestexs.clear();
 	}
 	
+	public void setupShader()
+	{
+		vsId = ShaderUtils.makeShader(ShaderUtils.loadText("Resources/shaders/default.vert"), GL20.GL_VERTEX_SHADER);
+		// Load the fragment shader
+		fsId = ShaderUtils.makeShader(ShaderUtils.loadText("Resources/shaders/default.frag"), GL20.GL_FRAGMENT_SHADER);
+		
+		// Create a new shader program that links both shaders
+		shader_id = ShaderUtils.makeProgram(vsId, fsId);
+		
+		GL20.glBindAttribLocation(shader_id, RenderEngine.VERTEX_ATTRIB_POINTER, "in_Position");
+		GL20.glBindAttribLocation(shader_id, RenderEngine.TEXTURE_ATTRIB_POINTER, "in_TextureCoord");
+		GL20.glBindAttribLocation(shader_id, RenderEngine.NORMAL_ATTRIB_POINTER, "in_Normal");
+		
+		GL20.glValidateProgram(shader_id);
+	}
+	
 	private void read(File file) {
 		int linecounter = 0;
-		
 		
 		try 
 		{
@@ -241,8 +267,6 @@ public class ModelObj extends Model
 		return numpolys;
 	}
 	
-	
-	
 	private int vaoId;
 	
 	private int vboId;
@@ -310,24 +334,29 @@ public class ModelObj extends Model
 		GL30.glBindVertexArray(0);
 	}
 	
-	public void draw()
-	{
-		GL30.glBindVertexArray(vaoId);
+	public void draw(float frame, float[] vpMatrix, float[] matrix)
+	{	
+		ShaderUtils.useProgram(shader_id);
 		{
-			GL20.glEnableVertexAttribArray(RenderEngine.VERTEX_ATTRIB_POINTER);
-			GL20.glEnableVertexAttribArray(RenderEngine.TEXTURE_ATTRIB_POINTER);
-			GL20.glEnableVertexAttribArray(RenderEngine.NORMAL_ATTRIB_POINTER);
+			ShaderUtils.setUniformMatrix4(shader_id, "viewprojMatrix", vpMatrix);
 			
-			// Draw the vertices
-			GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numpolys * 3);
-			
-			// Put everything back to default (deselect)
-			GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-			GL20.glDisableVertexAttribArray(RenderEngine.VERTEX_ATTRIB_POINTER);
-			GL20.glDisableVertexAttribArray(RenderEngine.TEXTURE_ATTRIB_POINTER);
-			GL20.glDisableVertexAttribArray(RenderEngine.NORMAL_ATTRIB_POINTER);
+			ShaderUtils.setUniformMatrix4(shader_id, "modelMatrix", matrix);
+			GL30.glBindVertexArray(vaoId);
+			{
+				GL20.glEnableVertexAttribArray(RenderEngine.VERTEX_ATTRIB_POINTER);
+				GL20.glEnableVertexAttribArray(RenderEngine.TEXTURE_ATTRIB_POINTER);
+				GL20.glEnableVertexAttribArray(RenderEngine.NORMAL_ATTRIB_POINTER);
+				// Draw the vertices
+				GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numpolys * 3);
+				// Put everything back to default (deselect)
+				
+				GL20.glDisableVertexAttribArray(RenderEngine.VERTEX_ATTRIB_POINTER);
+				GL20.glDisableVertexAttribArray(RenderEngine.TEXTURE_ATTRIB_POINTER);
+				GL20.glDisableVertexAttribArray(RenderEngine.NORMAL_ATTRIB_POINTER);
+			}
 			GL30.glBindVertexArray(0);
 		}
+		ShaderUtils.useProgram(0);
 	}
 	
 	public void destroy()
@@ -337,6 +366,7 @@ public class ModelObj extends Model
 		// Disable the VBO index from the VAO attributes list
 		GL20.glDisableVertexAttribArray(0);
 		GL20.glDisableVertexAttribArray(1);
+		GL20.glDisableVertexAttribArray(2);
 		
 		// Delete the vertex VBO
 		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
