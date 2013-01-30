@@ -100,6 +100,8 @@ public class ModelObj extends Model
 		GL20.glBindAttribLocation(shader_id, RenderEngine.NORMAL_ATTRIB_POINTER, "in_Normal");
 		
 		GL20.glValidateProgram(shader_id);
+		GLUtil.cerror(getClass().getName() + " setupShader");
+		
 	}
 	
 	private void read(File file) {
@@ -332,6 +334,7 @@ public class ModelObj extends Model
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 		}
 		GL30.glBindVertexArray(0);
+		GLUtil.cerror(getClass().getName() + " compileVBO");
 	}
 	
 	public void draw(float frame, float[] vpMatrix, float[] matrix)
@@ -339,20 +342,19 @@ public class ModelObj extends Model
 		ShaderUtils.useProgram(shader_id);
 		{
 			ShaderUtils.setUniformMatrix4(shader_id, "viewprojMatrix", vpMatrix);
-			
 			ShaderUtils.setUniformMatrix4(shader_id, "modelMatrix", matrix);
 			GL30.glBindVertexArray(vaoId);
 			{
-				GL20.glEnableVertexAttribArray(RenderEngine.VERTEX_ATTRIB_POINTER);
-				GL20.glEnableVertexAttribArray(RenderEngine.TEXTURE_ATTRIB_POINTER);
-				GL20.glEnableVertexAttribArray(RenderEngine.NORMAL_ATTRIB_POINTER);
+				GL20.glEnableVertexAttribArray(0);
+				GL20.glEnableVertexAttribArray(1);
+				GL20.glEnableVertexAttribArray(2);
 				// Draw the vertices
 				GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, numpolys * 3);
 				// Put everything back to default (deselect)
 				
-				GL20.glDisableVertexAttribArray(RenderEngine.VERTEX_ATTRIB_POINTER);
-				GL20.glDisableVertexAttribArray(RenderEngine.TEXTURE_ATTRIB_POINTER);
-				GL20.glDisableVertexAttribArray(RenderEngine.NORMAL_ATTRIB_POINTER);
+				GL20.glDisableVertexAttribArray(0);
+				GL20.glDisableVertexAttribArray(1);
+				GL20.glDisableVertexAttribArray(2);
 			}
 			GL30.glBindVertexArray(0);
 		}
@@ -386,7 +388,21 @@ public class ModelObj extends Model
  */
 class FaceGroup
 {
+	public int texture_id;
+	public float Ka;
+	public float Kd;
+	public float Ks;
+	
+	public float d;//or Tr
+	
+	
 	private ArrayList<int[]> faces = new ArrayList<int[]>(); // Array of Faces (vertex sets)
 	private ArrayList<int[]> facestexs = new ArrayList<int[]>(); // Array of of Faces textures
 	private ArrayList<int[]> facesnorms = new ArrayList<int[]>(); // Array of Faces normals
+	
+	public boolean isEmpty()
+	{
+		return faces.isEmpty() && facestexs.isEmpty() && facesnorms.isEmpty();
+	}
 }
+

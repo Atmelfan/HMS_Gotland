@@ -31,7 +31,7 @@ public class HMS_Gotland
 	}
 	
 	// Setup variables
-	private final String WINDOW_TITLE = "OpenGL 3 test";
+	private final String WINDOW_TITLE = "HMS Gotland - fps: ";
 	private final int WIDTH = 1024;
 	private final int HEIGHT = 480;
 	// Texture variables
@@ -52,12 +52,6 @@ public class HMS_Gotland
 	public HMS_Gotland() 
 	{
 		System.setProperty("org.lwjgl.librarypath",System.getProperty("user.dir") + File.separator + "Resources" + File.separator + "native" + File.separator + OSUtil.getOS());
-		if(GLUtil.getGLMaxVersion() < 31)
-		{
-			Sys.alert("OpenGL Version", "Requires OpenGL 3.2 or higher!");
-			System.exit(-1);
-		}
-		
 		run();
 	}
 	
@@ -73,12 +67,12 @@ public class HMS_Gotland
 		System.out.println("LWJGL version: "  + Sys.getVersion());
 		System.out.println("Tesselation: " + GLContext.getCapabilities().GL_ARB_tessellation_shader);
 		System.out.println("==========================INFO==========================");
-		renderEngine.camera.setPos(new org.lwjgl.util.vector.Vector3f(0, -2, -10));
 		
 		level = new Level("test", this);
+		GLUtil.cerror(getClass().getName() + " level load");
 		
 		setupTextures();
-		
+		GLUtil.cerror(getClass().getName() + " texture load");
 		wardos = new Wardos();
 		
 		renderEngine.camera.owner = getPlayer();

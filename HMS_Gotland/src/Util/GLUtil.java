@@ -14,6 +14,7 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.Pbuffer;
 import org.lwjgl.opengl.PixelFormat;
+import org.lwjgl.util.glu.GLU;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
@@ -24,8 +25,9 @@ public class GLUtil
 {
 	public static void cerror(String s)
 	{
-		if(GL11.glGetError() != GL11.GL_NO_ERROR)
-			System.out.println(s);
+		int i = GL11.glGetError();
+		if(i != GL11.GL_NO_ERROR)
+			System.err.println("OGL error(" + GLU.gluErrorString(i)+ ") at " + s);
 	}
 	
 	public static int getGLMaxVersion()

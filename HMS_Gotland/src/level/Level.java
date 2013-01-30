@@ -195,12 +195,11 @@ public class Level
 									tag = tag.trim();
 									
 									if(tag.startsWith("}")) break;
-									System.out.println("f");
 									e.processTag(tag);
 								}
 							}
-							addEntity(e);
 							e.setPos(new Vector3f(Float.valueOf(lines[2]), Float.valueOf(lines[3]), Float.valueOf(lines[4])));
+							addEntity(e);
 						}else
 						{
 							throw new InvalidLevelException(file.getName(), "Invalid entity in level file", lineCount);

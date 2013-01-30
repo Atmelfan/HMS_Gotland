@@ -58,6 +58,12 @@ public class ShaderUtils
 			// GLException.checkGLError();
 		}
 		GL20.glLinkProgram(id);
+		
+		String s = GL20.glGetProgramInfoLog(id, 1000);
+		if(GL20.glGetProgrami(id, GL20.GL_LINK_STATUS) != GL11.GL_TRUE)
+		{
+			System.err.println("#####Shader link error#####\n" + s);
+		}
 		// GLException.checkGLError();
 		return id;
 	}
@@ -199,9 +205,9 @@ public class ShaderUtils
 		// GLException.checkGLError();
 		GL20.glCompileShader(id);
 		String s = GL20.glGetShaderInfoLog(id, 1000);
-		if (!s.isEmpty())
+		if(GL20.glGetShaderi(id, GL20.GL_COMPILE_STATUS) != GL11.GL_TRUE)
 		{
-			System.err.println("Error compiling shader!\n" + source);
+			System.err.println("#####Error compiling shader!#####\n" + source);
 			System.err.println(s);
 			return -1;
 		}
