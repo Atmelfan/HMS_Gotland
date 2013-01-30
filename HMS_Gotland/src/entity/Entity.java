@@ -147,10 +147,8 @@ public class Entity
 	public void processTag(String tag)
 	{
 		String[] cmds = tag.split(" ");
-		System.out.println(cmds[0]);
 		if(cmds[0].equalsIgnoreCase("pos") && cmds.length > 3)
 		{
-			System.out.println("t");
 			setPos(new Vector3f(Float.valueOf(cmds[1]), Float.valueOf(cmds[2]), Float.valueOf(cmds[3])));
 		}
 	}	

@@ -55,12 +55,13 @@ public class Wardos
 		fsId = ShaderUtils.makeShader(ShaderUtils.loadText("Resources/shaders/wardos.frag"), GL20.GL_FRAGMENT_SHADER);
 		
 		// Create a new shader program that links both shaders
-		shader_id = ShaderUtils.makeProgram(vsId, fsId);
+		shader_id = ShaderUtils.makeProgram(fsId, vsId);
 		
 		GL20.glBindAttribLocation(shader_id, 0, "in_Position");
 		GL20.glBindAttribLocation(shader_id, 1, "in_TextureCoord");
 		
 		GL20.glValidateProgram(shader_id);
+		GLUtil.cerror(getClass().getName() + " setupShader");
 	}
 	
 	public void renderToTexture()

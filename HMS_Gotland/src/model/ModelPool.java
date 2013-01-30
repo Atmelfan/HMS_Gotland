@@ -76,13 +76,11 @@ public class ModelPool
 	
 	private static FilenameFilter modelFilter = new FilenameFilter()
 	{
-
 		@Override
 		public boolean accept(File arg0, String arg1)
 		{
 			return arg1.endsWith(".obj") || arg1.endsWith(".md2");
 		}
-		
 	};
 
 	public void destroyUnused()

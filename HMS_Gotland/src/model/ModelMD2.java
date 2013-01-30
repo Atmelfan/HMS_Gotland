@@ -117,6 +117,7 @@ public class ModelMD2 extends Model
 		GL20.glBindAttribLocation(shader_id, 5, "in_Normal_1");
 		
 		GL20.glValidateProgram(shader_id);
+		GLUtil.cerror(getClass().getName() + " setupShader");
 	}
 	
 	public void destroy()
@@ -250,6 +251,7 @@ public class ModelMD2 extends Model
 			//Save frame id
 			frame_ids[k] = id;
 		}
+		GLUtil.cerror(getClass().getName() + " compileVBO");
 	}
 	
 	public void read(File file)
