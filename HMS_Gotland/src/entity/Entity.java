@@ -11,7 +11,8 @@ import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.Transform;
 
-import hms_gotland_core.HMS_Gotland;
+import hms_gotland_client.HMS_Gotland;
+import hms_gotland_client.RenderEngine;
 
 public class Entity
 {
@@ -22,12 +23,12 @@ public class Entity
 	//Temp stuff for retrieving OpenGL matrix from body
 	private Transform tempTransform = new Transform();
 
-	public Entity(Level level, Vector3f pos)
+	public Entity(Level level, Vector3f pos, float mass)
 	{
 		setModel(level.renderEngine.getModel(getEntityModelName()));
 		
 		BoxShape shape = new BoxShape(new Vector3f(getModel().getXWidth(), getModel().getYHeight(), getModel().getZDepth()));
- 	    Vector3f localInertia = new Vector3f(0,0,0);
+ 	    Vector3f localInertia = new Vector3f(0, 0, 0);
 	    shape.calculateLocalInertia(getMass(), localInertia);
 
 	    Transform startTransform = new Transform();
@@ -35,12 +36,25 @@ public class Entity
 	    startTransform.origin.set(pos);
 	    
 	    motionstate = new EntityMotionState(startTransform);
-	    
-	    RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(getMass(), motionstate, shape, localInertia);
+	    RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, motionstate, shape, localInertia);
 	    body = new RigidBody(rbInfo);
 	    body.setRestitution(0.1f);
 	    body.setFriction(0.50f);
 	    body.setDamping(0f, 0f);
+	    
+	    //Associate this entity with rigidbody and collisionshape
+	    body.setUserPointer(this);
+	    shape.setUserPointer(this);
+	}
+	
+	public Entity(Level level, Vector3f pos)
+	{
+		this(level, pos, getMass());
+	}
+	
+	public void collisionCallback(Entity entityCollided)
+	{
+		
 	}
 	
 	public void tick()
@@ -48,22 +62,28 @@ public class Entity
 		
 	}
 	
-	protected float getMass()
+	protected static float getMass()
 	{
 		return 1f;
 	}
 	
 	protected String getEntityModelName()
 	{
-		return "default.obj";
+		return "gpa_robotics_war.md2";
 	}
 
-	public void draw()
+	public void draw(RenderEngine renderEngine)
 	{
-		motionstate.uploadOpenGLMatrix(HMS_Gotland.modelMatrixLocation);
-		getModel().draw();
+		float[] temp = new float[16];
+		body.getWorldTransform(new Transform()).getOpenGLMatrix(temp);
+		model.draw(0, renderEngine.getViewProjectionMatrix(), temp);
 	}
 	
+	protected int getFrame()
+	{
+		return 0;
+	}
+
 	public Transform getWorldTransform()
 	{
 		body.getWorldTransform(tempTransform);
@@ -85,11 +105,11 @@ public class Entity
 		body.translate(vector3f);
 	}
 
+	private float[] tmatrix = new float[16];
 	public float[] getModelMatrix()
 	{
-		float[] matrix = new float[16];
-		motionstate.getWorldTransform(new Transform()).getOpenGLMatrix(matrix);
-		return matrix;
+		motionstate.getWorldTransform().getOpenGLMatrix(tmatrix);
+		return tmatrix;
 	}
 	
 	/**
@@ -122,5 +142,16 @@ public class Entity
 	public void setModel(Model model)
 	{
 		this.model = model;
+	}
+
+	public void processTag(String tag)
+	{
+		String[] cmds = tag.split(" ");
+		System.out.println(cmds[0]);
+		if(cmds[0].equalsIgnoreCase("pos") && cmds.length > 3)
+		{
+			System.out.println("t");
+			setPos(new Vector3f(Float.valueOf(cmds[1]), Float.valueOf(cmds[2]), Float.valueOf(cmds[3])));
+		}
 	}	
 }

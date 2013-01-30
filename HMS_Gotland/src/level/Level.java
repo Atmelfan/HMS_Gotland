@@ -1,38 +1,43 @@
 package level;
 
 
-import hms_gotland_core.HMS_Gotland;
-import hms_gotland_core.RenderEngine;
+import hms_gotland_client.HMS_Gotland;
+import hms_gotland_client.RenderEngine;
 
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.ByteBuffer;
+import java.nio.FloatBuffer;
 import java.util.ArrayList;
 
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
 
+import org.lwjgl.BufferUtils;
+import org.lwjgl.util.vector.Matrix4f;
+
 import com.bulletphysics.collision.broadphase.AxisSweep3;
-import com.bulletphysics.collision.broadphase.BroadphaseNativeType;
+import com.bulletphysics.collision.broadphase.BroadphasePair;
+import com.bulletphysics.collision.broadphase.DispatcherInfo;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
+import com.bulletphysics.collision.dispatch.CollisionObject;
+import com.bulletphysics.collision.dispatch.CollisionWorld.RayResultCallback;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
+import com.bulletphysics.collision.dispatch.NearCallback;
+import com.bulletphysics.collision.dispatch.CollisionWorld.LocalRayResult;
+import com.bulletphysics.collision.shapes.BoxShape;
 import com.bulletphysics.collision.shapes.BvhTriangleMeshShape;
 import com.bulletphysics.collision.shapes.CollisionShape;
-import com.bulletphysics.collision.shapes.ConvexHullShape;
-import com.bulletphysics.collision.shapes.IndexedMesh;
 import com.bulletphysics.collision.shapes.StridingMeshInterface;
 import com.bulletphysics.collision.shapes.TriangleIndexVertexArray;
-import com.bulletphysics.collision.shapes.TriangleMeshShape;
-import com.bulletphysics.collision.shapes.TriangleShape;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.DynamicsWorld;
+import com.bulletphysics.dynamics.InternalTickCallback;
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
-import com.bulletphysics.dynamics.vehicle.RaycastVehicle;
 import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
 import com.bulletphysics.util.ObjectArrayList;
@@ -51,34 +56,38 @@ public class Level
 	private File levelFile;
 	
 	public ArrayList<Entity> entities = new ArrayList<>();
-	
 	public EntityPlayer player;
 	
 	public String name;
 	
 	public ModelObj model;
 	public RigidBody levelbody;
-	
 	public DynamicsWorld level;
+	
+	public RenderEngine renderEngine;
 	private HMS_Gotland game;
 
-	public RenderEngine renderEngine = new RenderEngine();
 	
 	public Level(String name, HMS_Gotland gotland)
 	{
 		game = gotland;
+		renderEngine = gotland.renderEngine;
+		//Setup bullet world
 		setupWorld();
-		
-		player = new EntityPlayer(this, new Vector3f());
+		//Create player
+		player = new EntityPlayer(this, new Vector3f(0, 0, 0));
 		addEntity(player);
-		
+		//Read level save file
 		levelFile = new File(DEFAULT_LEVEL_PATH + name);
 		parseLevelFile(levelFile);
+		
+		
 	}
 	
 	public void tick()
 	{
 		level.stepSimulation(1/60F);
+		
 		for(int i = 0; i < entities.size(); i++)
 		{
 			entities.get(i).tick();
@@ -102,13 +111,13 @@ public class Level
 		if(model != null)
 		{
 			//Draw level data
-			//Empty model matrix already exist
-			model.draw();
+			float[] temp = new float[16];
+			levelbody.getWorldTransform(new Transform()).getOpenGLMatrix(temp);
+			model.draw(0, renderEngine.getViewProjectionMatrix(), temp);
 		}
-		
 		for (int i = 0; i < entities.size(); i++)
 		{
-			entities.get(i).draw();
+			entities.get(i).draw(renderEngine);
 		}
 	}
 	
@@ -174,11 +183,24 @@ public class Level
 					String[] lines = line.split(" ");
 					if(lines.length > 4)
 					{
-						
-						Entity e = EntityList.getEntity(lines[1], this, new Vector3f(Float.valueOf(lines[2]), Float.valueOf(lines[3]), Float.valueOf(lines[4])));
+						Entity e = EntityList.getEntity(lines[1], this, new Vector3f());
 						if(e != null)
 						{
+							if(line.endsWith("{"))
+							{
+								
+								String tag;
+								while((tag = reader.readLine()) != null)
+								{
+									tag = tag.trim();
+									
+									if(tag.startsWith("}")) break;
+									System.out.println("f");
+									e.processTag(tag);
+								}
+							}
 							addEntity(e);
+							e.setPos(new Vector3f(Float.valueOf(lines[2]), Float.valueOf(lines[3]), Float.valueOf(lines[4])));
 						}else
 						{
 							throw new InvalidLevelException(file.getName(), "Invalid entity in level file", lineCount);
@@ -251,7 +273,9 @@ public class Level
 							vertes.add(new Vector3f(data[i].getXYZ()));
 						}
 						//Create body
-						CollisionShape groundShape = new ConvexHullShape(vertes);
+						//TriangleIndexVertexArray array = new TriangleIndexVertexArray(model.numpolygons(), );
+						
+						CollisionShape groundShape = new BoxShape(new Vector3f(model.getXWidth(), model.getYHeight(), model.getZDepth()));
 						Transform groundTransform = new Transform();
 						groundTransform.setIdentity();
 						groundTransform.origin.set(new Vector3f(0F, 0F, 0F));
@@ -261,12 +285,9 @@ public class Level
 						RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, myMotionState, groundShape, localInertia);
 						levelbody = new RigidBody(rbInfo);
 						levelbody.setRestitution(0.1f);
-						levelbody.setFriction(0.50f);
+						levelbody.setFriction(0.10f);
 						levelbody.setDamping(0f, 0f);
 						//Add level body to level
-						
-						
-						
 						level.addRigidBody(levelbody);
 						model.data.clear();
 					}else

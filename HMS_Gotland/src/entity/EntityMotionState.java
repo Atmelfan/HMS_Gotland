@@ -35,15 +35,4 @@ public class EntityMotionState extends MotionState
 		transform.set(arg0);
 	}
 	
-	public void uploadOpenGLMatrix(int location)
-	{
-		//Allocate an float array to keep the matrix
-		float[] matrix = new float[16];
-		transform.getOpenGLMatrix(matrix);
-		FloatBuffer buffer = BufferUtils.createFloatBuffer(matrix.length);
-		buffer.put(matrix); buffer.flip();
-		//Upload matrix to shader
-		GL20.glUniformMatrix4(location, false, buffer);
-	}
-	
 }

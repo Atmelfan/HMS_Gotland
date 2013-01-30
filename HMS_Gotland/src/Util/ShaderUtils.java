@@ -16,6 +16,7 @@ public class ShaderUtils
 {
 	public static int VERTEX = GL20.GL_VERTEX_SHADER;
 	public static int FRAGMENT = GL20.GL_FRAGMENT_SHADER;
+	private static int lastShaderID;
 
 	/**
 	 * Sets opengl to use the specified program.
@@ -25,7 +26,11 @@ public class ShaderUtils
 	 */
 	public static void useProgram(int id)
 	{
-		GL20.glUseProgram(id);
+		if(id != lastShaderID && id != 0)
+		{
+			GL20.glUseProgram(id);
+			lastShaderID = id;
+		}
 	}
 
 	/**
@@ -86,7 +91,7 @@ public class ShaderUtils
 	public static void setUniformVar(int program, String name, float... values)
 	{
 		int loc = GL20.glGetUniformLocation(program, name);
-		// GLException.checkGLError();
+		//GLException.checkGLError();
 		switch (values.length)
 		{
 		case 1:
@@ -120,6 +125,16 @@ public class ShaderUtils
 		// GLException.checkGLError();
 	}
 
+	private static FloatBuffer temp = BufferUtils.createFloatBuffer(16);
+	public static void setUniformMatrix4(int program, String name, float[] values)
+	{
+		int loc = GL20.glGetUniformLocation(program, name);
+		//GLException.checkGLError();
+		temp.put(values); temp.flip();
+		GL20.glUniformMatrix4(loc, false, temp);
+		// GLException.checkGLError();
+	}
+	
 	/**
 	 * Sets the value of the specified uniform variable to that given.
 	 * 
