@@ -4,9 +4,7 @@
 //Level data(stored as .obj)
 &obj ship.obj
 
-//&exit, exit to next level(unlimited amounts of exits)
-//Game will load next level during play if preload == true(decreases game performance but nullifies level load time)
-//args &exit <level name> <preload level(true/false)> <x> <y> <z>
+//&exit, exit to another level
 &exit start true 0 0 0
 
 //sets player pos and angle
@@ -21,16 +19,14 @@
 &entity default -2.5 20 0
 
 //Compound entity
-#define §ENEMY &entity WAR
-{
+&entity WAR {
 	&model war.md2
 	&ai attack
 	&health 20
 }
 
-#event player.death
-{
-	&gui display static
+#event player.death {
+	&gui display glass_shattered
 	&gui prompt "OFFLINE"
 	&delay 1000
 	&gui clear
