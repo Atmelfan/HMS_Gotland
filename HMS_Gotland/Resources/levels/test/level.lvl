@@ -22,7 +22,6 @@
 
 //Compound entity
 &entity WAR {
-	&pos 0 15 9
 	&model war.md2
 	&ai attack
 	&health 20
