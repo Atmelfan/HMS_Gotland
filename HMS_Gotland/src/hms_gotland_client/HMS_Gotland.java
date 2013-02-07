@@ -2,7 +2,6 @@ package hms_gotland_client;
 
 import java.io.File;
 
-import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
 
 import level.Level;
@@ -33,7 +32,7 @@ public class HMS_Gotland
 	// Setup variables
 	private final String WINDOW_TITLE = "HMS Gotland - fps: ";
 	private final int WIDTH = 1024;
-	private final int HEIGHT = 480;
+	private final int HEIGHT = 512;
 	// Texture variables
 	private int[] texIds = new int[] {0, 0};
 	private int textureSelector = 0;
@@ -43,10 +42,9 @@ public class HMS_Gotland
 	private int fps;
 	private int currentfps;
 	
-	private Level level;
+	Level level;
 	public RenderEngine renderEngine;
-	
-	private long lastTick;
+
 	private Wardos wardos;
 	
 	public HMS_Gotland() 
@@ -57,7 +55,7 @@ public class HMS_Gotland
 	
 	public void run()
 	{
-		renderEngine = new RenderEngine(WIDTH, HEIGHT);
+		renderEngine = new RenderEngine(this, WIDTH, HEIGHT);
 		System.out.println("==========================INFO==========================");
 		System.out.println("Operating system: " + System.getProperty("os.name"));
 		System.out.println("System architecture: "  + System.getProperty("os.arch"));
@@ -73,20 +71,16 @@ public class HMS_Gotland
 		
 		setupTextures();
 		GLUtil.cerror(getClass().getName() + " texture load");
-		wardos = new Wardos();
+		wardos = new Wardos(this);
 		
 		renderEngine.camera.owner = getPlayer();
 		
-		lastTick = lastFrame = Sys.getTime();
+		lastFrame = Sys.getTime();
+		level.time(1f);
 		
 		while (!Display.isCloseRequested()) 
 		{
 			currentfps++;
-			if(Sys.getTime() - lastTick >= 16)
-			{
-				level.tick();
-				lastTick = Sys.getTime();
-			}
 			if(Sys.getTime() - lastFrame >= 1000)
 			{
 				lastFrame = Sys.getTime();
@@ -94,6 +88,8 @@ public class HMS_Gotland
 				currentfps = 0;
 				Display.setTitle(WINDOW_TITLE + fps);
 			}
+			
+			level.tick();
 			
 			loopCycle();
 			
@@ -204,6 +200,7 @@ public class HMS_Gotland
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texIds[textureSelector]);
 		
+		renderEngine.drawStarField();
 		level.draw();
 		wardos._render();
 	}

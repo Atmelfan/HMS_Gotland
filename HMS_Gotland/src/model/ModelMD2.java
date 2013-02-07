@@ -12,19 +12,13 @@ import java.util.ArrayList;
 import javax.vecmath.Vector3f;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.LWJGLException;
-import org.lwjgl.opengl.ContextAttribs;
-import org.lwjgl.opengl.Display;
-import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.PixelFormat;
 
 import Util.GLUtil;
-import Util.OSUtil;
 import Util.ShaderUtils;
 import Util.VertexData;
 
@@ -63,40 +57,11 @@ public class ModelMD2 extends Model
 		//System.out.println(header.toString());
 		//Assemble frames into VBOs
 		compileVBO();
-		//Setup class static interpolation & translation shader if not done yet
+		//Setup shared interpolation & translation shader if not done yet
 		if(shader_id <= 0)
 		{
 			setupShader();
 		}
-	}
-
-	private ModelMD2()
-	{//Testing constructor...
-	}
-
-	public static void main(String[] args)
-	{
-		System.setProperty("org.lwjgl.librarypath",System.getProperty("user.dir") + File.separator + "Resources" + File.separator + "native" + File.separator + OSUtil.getOS());
-		try 
-		{
-			PixelFormat pixelFormat = new PixelFormat(24, 8, 8, 0, GLUtil.getMaxSamplings());
-			ContextAttribs contextAtrributes = new ContextAttribs(3, 2);
-			contextAtrributes.withForwardCompatible(true);
-			contextAtrributes.withProfileCore(true);
-			
-			Display.setDisplayMode(new DisplayMode(1, 1));
-			Display.create(pixelFormat, contextAtrributes);
-			
-			GL11.glViewport(0, 0, 1, 1);
-		}catch(LWJGLException e) {
-			e.printStackTrace();
-			System.exit(-1);
-		}
-		
-		ModelMD2 m = new ModelMD2();
-		m.read(new File("Resources/models/fighter.md2"));
-		System.out.println(m.header.toString());
-		m.compileVBO();
 	}
 	
 	public void setupShader()
@@ -120,6 +85,7 @@ public class ModelMD2 extends Model
 		GLUtil.cerror(getClass().getName() + " setupShader");
 	}
 	
+	@Override
 	public void destroy()
 	{
 		//Delete VAO
@@ -136,18 +102,21 @@ public class ModelMD2 extends Model
 		}
 		GL30.glBindVertexArray(0);
 		GL30.glDeleteVertexArrays(vao_id);
+		GL11.glDeleteTextures(tex_id);
 	}
 
 	@Override
 	public void draw(float frame, float[] vpMatrix, float[] matrix)
 	{
-		//if(frame < 0 || frame > header.num_frames - 1) return;
+		if(frame < 0 || frame > header.num_frames - 1) return;
 			
 		//Select current frame and next
 		int frame_0 = frame_ids[(int) Math.floor(frame)];
 		
 		int frame_1 = frame_ids[(int) Math.min(Math.ceil(frame), header.num_frames - 1)];
 		//Upload frame interpolation
+		
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, tex_id);
 		
 		ShaderUtils.useProgram(shader_id);
 		{
@@ -178,7 +147,7 @@ public class ModelMD2 extends Model
 				//Enable attribs and render
 				for(int i = 0; i < 6; i++){ GL20.glEnableVertexAttribArray(i); }
 				{
-					GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, header.num_tris);
+					GL11.glDrawArrays(GL11.GL_TRIANGLES, 0, header.num_tris * 3);
 				}
 				for(int i = 0; i < 6; i++){ GL20.glDisableVertexAttribArray(i); }
 				
@@ -187,7 +156,9 @@ public class ModelMD2 extends Model
 			GL30.glBindVertexArray(0);
 		}
 		ShaderUtils.useProgram(0);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, 0);
 	}
+	
 	@Override
 	public boolean isAnimated()
 	{
@@ -198,30 +169,31 @@ public class ModelMD2 extends Model
 	{
 		frame_ids = new int[header.num_frames];
 		ArrayList<VertexData> data = new ArrayList<>();
-		for(int k = 0; k < header.num_frames; k++)
+		for(int currentFrame = 0; currentFrame < header.num_frames; currentFrame++)
 		{
-			MD2_Frame frame = frames[k];// Current frame
-			for (int i = 0; i < header.num_tris; i++)
+			MD2_Frame frame = frames[currentFrame];// Current frame
+			for (int currentTriangle = 0; currentTriangle < header.num_tris; currentTriangle++)
 			{
 				for (int j = 0; j < 3; j++)
 				{
 					VertexData temp = new VertexData();
 					//Extract position from vertex array using triangles vertex index
-					MD2_Vertex vertex = frame.vertices[triangles[i].vertexIndex[j]];
-					temp.setXYZ(vertex.v[0], vertex.v[1], vertex.v[2]);
+					MD2_Vertex vertex = frame.vertices[triangles[currentTriangle].vertexIndex[j]];
+					//For MD2 format/exporter Z is up, swap Z and Y for OGL
+					temp.setXYZ(vertex.v[1], vertex.v[2], vertex.v[0]);
 					
 					//Extract texture coords from st array using triangle texture index
-					float s = (float)textureCoords[triangles[i].textureIndex[j]].s / header.width;
-					float t = (float)textureCoords[triangles[i].textureIndex[j]].t / header.height;
+					float s = (float)(textureCoords[triangles[currentTriangle].textureIndex[j]].s / 256f);
+					float t = (float)(textureCoords[triangles[currentTriangle].textureIndex[j]].t / 256f);
 					temp.setST(s, t);
 					
 					//Normals, why hardcoded?
-					int index = frame.vertices[triangles[i].vertexIndex[j]].lightNormalIndex;
+					int index = frame.vertices[triangles[currentTriangle].vertexIndex[j]].lightNormalIndex;
 					//Some models seems to use a different normal array and doesn't work with Quake II normals
 					if(index < ModelMD2_Normals.normals.length)
 					{
 						float[] n = ModelMD2_Normals.normals[index];
-						temp.setNormal(n[0], n[1], n[2]);
+						temp.setNormal(n[0], n[2], n[1]);
 					}
 					
 					data.add(temp);//Add vertex data
@@ -249,7 +221,7 @@ public class ModelMD2 extends Model
 			data.clear();
 			
 			//Save frame id
-			frame_ids[k] = id;
+			frame_ids[currentFrame] = id;
 		}
 		GLUtil.cerror(getClass().getName() + " compileVBO");
 	}
@@ -375,10 +347,11 @@ public class ModelMD2 extends Model
 			ofs_end 	= Integer.reverseBytes(data.readInt());
 		}
 
+		@Override
 		public String toString()
 		{
-			return 	"===MD2 header===\nmagic: " + ident + "\nver: " + version + "\nth: " + height + "\ntw: " + width + "\nframe size: " + frameSize + 
-					"\nnum frames: " + num_frames + "\nnum vertices: " + num_xyz + "\nnum texcoords: " + num_st + "\n===MD2 header===";
+			return 	"===MD2 header===\nmagic: " + ident + "\nver: " + version + "\nth: " + height + "\ntw: " + width + "\nnum frames: " + num_frames + 
+					"\nnum_triangles: " + num_tris + "\nnum vertices: " + num_xyz + "\nnum texcoords: " + num_st + "\n===MD2 header===";
 		}
 		
 		
@@ -396,7 +369,8 @@ public class ModelMD2 extends Model
 				temp[i] = (char) data.readUnsignedByte();
 			}
 			name = new String(temp);
-			//tex_id = GLUtil.loadPNGTexture(name, GL13.GL_TEXTURE0);
+			
+			tex_id = GLUtil.loadPNGTexture(name, GL13.GL_TEXTURE0);
 			return this;
 		}
 	}
@@ -446,7 +420,7 @@ public class ModelMD2 extends Model
 		{
 			for (int i = 0; i < v.length; i++)
 			{
-				v[i] = (float)data.readUnsignedByte() * frame.scale[i] + frame.translate[i];
+				v[i] = data.readUnsignedByte() * frame.scale[i] + frame.translate[i];
 			}
 			
 			lightNormalIndex = data.readUnsignedByte();

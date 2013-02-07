@@ -70,12 +70,82 @@ public class GLUtil
 	 * @param textureUnit, example GL_TEXTURE0
 	 * @return texture id
 	 */
+	public static Texture loadPNGTextureStruct(String filename, int textureUnit)
+	{
+		ByteBuffer buf = null;
+		int tWidth = 0;
+		int tHeight = 0;
+		
+		int texId;
+		
+		Texture t = new Texture();
+		
+		try
+		{
+			// Open the PNG file as an InputStream
+			InputStream in = new FileInputStream(filename);
+			// Link the PNG decoder to this stream
+			PNGDecoder decoder = new PNGDecoder(in);
+
+			// Get the width and height of the texture
+			tWidth = decoder.getWidth();
+			tHeight = decoder.getHeight();
+			
+			t.width = tWidth;
+			t.height = tHeight;
+			
+			// Decode the PNG file in a ByteBuffer
+			buf = ByteBuffer.allocateDirect(4 * decoder.getWidth()
+					* decoder.getHeight());
+			decoder.decode(buf, decoder.getWidth() * 4, Format.RGBA);
+			buf.flip();
+
+			in.close();
+			texId = GL11.glGenTextures();
+		} catch (IOException e)
+		{
+			System.err.println("Failed to load texture: " + e.getMessage());
+			return null;
+		}
+
+		// Create a new texture object in memory and bind it
+		
+		GL13.glActiveTexture(textureUnit);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
+
+		// All RGB bytes are aligned to each other and each component is 1 byte
+		GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
+
+		// Upload the texture data and generate mip maps (for scaling)
+		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, tWidth, tHeight, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf);
+		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+
+		// Setup the ST coordinate system
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+
+		// Setup what to do when the texture has to be scaled
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_NEAREST);
+
+		t.texture_id = texId;
+		
+		return t;
+	}
+	
+	/**
+	 * @param filename, path to png texture
+	 * @param textureUnit, example GL_TEXTURE0
+	 * @return texture id
+	 */
 	public static int loadPNGTexture(String filename, int textureUnit)
 	{
 		ByteBuffer buf = null;
 		int tWidth = 0;
 		int tHeight = 0;
-
+		
+		int texId;
+		
 		try
 		{
 			// Open the PNG file as an InputStream
@@ -94,14 +164,15 @@ public class GLUtil
 			buf.flip();
 
 			in.close();
+			texId = GL11.glGenTextures();
 		} catch (IOException e)
 		{
-			e.printStackTrace();
-			System.exit(-1);
+			System.err.println("Failed to load texture: " + e.getMessage());
+			return 0;
 		}
 
 		// Create a new texture object in memory and bind it
-		int texId = GL11.glGenTextures();
+		
 		GL13.glActiveTexture(textureUnit);
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
 
@@ -118,10 +189,12 @@ public class GLUtil
 
 		// Setup what to do when the texture has to be scaled
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_NEAREST);
 
 		return texId;
 	}
+	
+	
 	
 	/**
 	 * Creates and flips an buffer with the specified values
@@ -191,6 +264,26 @@ public class GLUtil
 		retur.m30 = from.m30; retur.m31 = from.m31; retur.m32 = from.m32; retur.m33 = from.m33;
 		return retur;
 	}
+	
+	public static org.lwjgl.util.vector.Matrix4f lwjglMatrix(float... from)
+	{
+		if(from.length < 16) return null;
+		//return new org.lwjgl.util.vector.Matrix4f(from); //Of course...
+		org.lwjgl.util.vector.Matrix4f retur = new org.lwjgl.util.vector.Matrix4f();
+		//FUCK!
+		retur.m00 = from[0]; retur.m01 = from[4]; retur.m02 = from[8]; retur.m03 = from[12];
+		retur.m10 = from[1]; retur.m11 = from[5]; retur.m12 = from[9]; retur.m13 = from[13];
+		retur.m20 = from[2]; retur.m21 = from[6]; retur.m22 = from[10]; retur.m23 = from[14];
+		retur.m30 = from[3]; retur.m31 = from[7]; retur.m32 = from[11]; retur.m33 = from[15];
+		return retur;
+	}
 
+	static class Texture
+	{
+		public int texture_id = 0;
+		
+		public int height;
+		public int width;
+	}
 	
 }

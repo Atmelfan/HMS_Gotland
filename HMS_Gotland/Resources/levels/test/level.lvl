@@ -10,7 +10,7 @@
 &exit start true 0 0 0
 
 //sets player pos and angle
-&player pos 0 15 0
+&player pos 0 25 0
 //&player angle 0 0 0
 
 //Add a test entity
@@ -21,8 +21,8 @@
 &entity default -2.5 20 0
 
 //Compound entity
-#define §ENEMY &entity WAR
-{
+&entity WAR {
+	&pos 0 15 9
 	&model war.md2
 	&ai attack
 	&health 20

@@ -35,9 +35,9 @@ public class AnimatedTexture
 		return textures.length;
 	}
 	
-	public int getTextureID(int i)
+	public int getTextureID(int time)
 	{
-		return textures[i];
+		return textures[time];
 	}
 	
 	public void destroy()

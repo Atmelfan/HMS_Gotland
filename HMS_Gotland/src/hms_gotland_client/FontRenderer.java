@@ -2,15 +2,11 @@ package hms_gotland_client;
 
 import java.awt.Color;
 import java.awt.Font;
-import java.awt.Graphics;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.image.BufferedImage;
 import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
-
-import javax.vecmath.Tuple3f;
-import javax.vecmath.Tuple4f;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.Display;
@@ -33,10 +29,10 @@ public class FontRenderer
 	private int vboiId;
 	private int vaoId;
 	private float font_height;
-	private FloatBuffer tempVerticesBuffer = BufferUtils.createFloatBuffer(12);
 	private static int vsId;
 	private static int fsId;
 	private static int shader_id;
+	private Font font;
 	
 	public FontRenderer(String font, int size)
 	{
@@ -44,7 +40,7 @@ public class FontRenderer
 		setupQuad();
 		if(shader_id <= 0)
 		{
-		setupShader();
+			setupShader();
 		}
 	}
 	
@@ -63,11 +59,12 @@ public class FontRenderer
 		GL20.glValidateProgram(shader_id);
 	}
 	
-	public void setup(String font, int size)
+	public void setup(String font_name, int size)
 	{
 		BufferedImage textImage = new BufferedImage(512, 512, BufferedImage.TYPE_INT_ARGB);
 		Graphics2D g = textImage.createGraphics();
-		g.setFont(new Font(font, Font.BOLD, size));
+		font = new Font(font_name, Font.BOLD, size);
+		g.setFont(font);
 		g.setBackground(new Color(0, 0, 0, 0));
 		g.setColor(Color.WHITE);
 		g.setRenderingHint(
@@ -137,10 +134,6 @@ public class FontRenderer
 				1f, -1f, 0f,	// Right bottom		ID: 2
 				1f, 1f, 0f		// Right left		ID: 3
 		};
-		// Sending data to OpenGL requires the usage of (flipped) byte buffers
-		FloatBuffer verticesBuffer = BufferUtils.createFloatBuffer(vertices.length);
-		verticesBuffer.put(vertices);
-		verticesBuffer.flip();
 		
 		// Vertices, the order is not important.
 		float[] texture = {
@@ -149,10 +142,6 @@ public class FontRenderer
 				1, 1,	// Right bottom		ID: 2
 				1, 0,	// Right left		ID: 3
 		};
-		// Sending data to OpenGL requires the usage of (flipped) byte buffers
-		FloatBuffer textureBuffer = BufferUtils.createFloatBuffer(texture.length);
-		textureBuffer.put(texture);
-		textureBuffer.flip();
 		
 		// OpenGL expects to draw vertices in counter clockwise order by default
 		byte[] indices = {
@@ -162,9 +151,6 @@ public class FontRenderer
 				2, 3, 0
 		};
 		indicesCount = indices.length;
-		ByteBuffer indicesBuffer = BufferUtils.createByteBuffer(indicesCount);
-		indicesBuffer.put(indices);
-		indicesBuffer.flip();
 		
 		// Create a new Vertex Array Object in memory and select it (bind)
 		// A VAO can have up to 16 attributes (VBO's) assigned to it by default
@@ -175,13 +161,13 @@ public class FontRenderer
 			// A VBO is a collection of Vectors which in this case resemble the location of each vertex.
 			vbovId = GL15.glGenBuffers();
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbovId);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesBuffer, GL15.GL_STREAM_DRAW);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, GLUtil.buffer(vertices), GL15.GL_STREAM_DRAW);
 			// Put the VBO in the attributes list at index 0
 			GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
 			
 			vbocId = GL15.glGenBuffers();
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbocId);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, textureBuffer, GL15.GL_STATIC_DRAW);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, GLUtil.buffer(texture), GL15.GL_STATIC_DRAW);
 			// Put the VBO in the attributes list at index 0
 			GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 0, 0);
 			
@@ -192,14 +178,14 @@ public class FontRenderer
 		// Create a new VBO for the indices and select it (bind)
 		vboiId = GL15.glGenBuffers();
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
-		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, indicesBuffer, GL15.GL_STATIC_DRAW);
+		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, GLUtil.buffer(indices), GL15.GL_STATIC_DRAW);
 		// Deselect (bind to 0) the VBO
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);		
 	}
 	
 	public float point(int coord, int size)
 	{
-		return (float)(coord/size);
+		return coord/size;
 	}
 	
 	public void drawString(int x, int y, String s, float r, float g, float b, float a)
@@ -217,15 +203,13 @@ public class FontRenderer
 				for (int i = 0; i < s.length(); i++)
 				{
 					char c = s.charAt(i);
-					if (c > '~' || c < ' ')
+					if (c < ' ' || c > '~')
 						continue;
 
 					float cw = ((float) character_width[c]) / Display.getWidth();
+					float ch = (font_height) / Display.getWidth();
 
-					float ch = ((float) font_height) / Display.getWidth();
-
-					GL11.glBindTexture(GL11.GL_TEXTURE_2D,
-							character_textures[c - ' ']);
+					GL11.glBindTexture(GL11.GL_TEXTURE_2D, character_textures[c - ' ']);
 
 					float[] vertices = 
 					{
@@ -234,14 +218,12 @@ public class FontRenderer
 							dx + cw, dy, 0f, 	// Right bottom ID: 2
 							dx + cw, dy + ch, 0f// Right top ID: 3
 					};
-					tempVerticesBuffer.rewind();
-					tempVerticesBuffer.put(vertices);
-					tempVerticesBuffer.flip();
+					
 					GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbovId);
 					{
 						// Update vertices position
 						GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0,
-								tempVerticesBuffer);
+								GLUtil.buffer(vertices));
 					}
 					GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 
@@ -267,5 +249,15 @@ public class FontRenderer
 		}
 		ShaderUtils.useProgram(0);
 
+	}
+
+	public void drawStringRightAdjusted(int i, int j, String string, float r, float g, float b, float a)
+	{
+		int xoffset = 0;
+		for (int l = 0; l < string.length(); l++)
+		{
+			if(string.charAt(l) > ' ' && string.charAt(l) < '~') xoffset += character_width[string.charAt(l)];
+		}
+		drawString(i - xoffset, j, string, r, g, b, a);
 	}
 }

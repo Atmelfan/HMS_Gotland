@@ -1,10 +1,5 @@
 package entity;
 
-import java.nio.FloatBuffer;
-
-import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL20;
-
 import com.bulletphysics.linearmath.MotionState;
 import com.bulletphysics.linearmath.Transform;
 
@@ -18,10 +13,10 @@ public class EntityMotionState extends MotionState
 	}
 
 	@Override
-	public Transform getWorldTransform(Transform arg0)
+	public Transform getWorldTransform(Transform tr)
 	{
-		arg0.set(transform);
-		return arg0;
+		tr.set(transform);
+		return tr;
 	}
 	
 	public Transform getWorldTransform()

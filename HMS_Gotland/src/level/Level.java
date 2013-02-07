@@ -9,32 +9,20 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.FloatBuffer;
 import java.util.ArrayList;
 
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
 
-import org.lwjgl.BufferUtils;
-import org.lwjgl.util.vector.Matrix4f;
+import org.lwjgl.Sys;
 
 import com.bulletphysics.collision.broadphase.AxisSweep3;
-import com.bulletphysics.collision.broadphase.BroadphasePair;
-import com.bulletphysics.collision.broadphase.DispatcherInfo;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
-import com.bulletphysics.collision.dispatch.CollisionObject;
-import com.bulletphysics.collision.dispatch.CollisionWorld.RayResultCallback;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
-import com.bulletphysics.collision.dispatch.NearCallback;
-import com.bulletphysics.collision.dispatch.CollisionWorld.LocalRayResult;
 import com.bulletphysics.collision.shapes.BoxShape;
-import com.bulletphysics.collision.shapes.BvhTriangleMeshShape;
 import com.bulletphysics.collision.shapes.CollisionShape;
-import com.bulletphysics.collision.shapes.StridingMeshInterface;
-import com.bulletphysics.collision.shapes.TriangleIndexVertexArray;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.DynamicsWorld;
-import com.bulletphysics.dynamics.InternalTickCallback;
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
@@ -55,6 +43,7 @@ public class Level
 	
 	private File levelFile;
 	
+	public ArrayList<BulletHole> bulletHoles = new ArrayList<>();
 	public ArrayList<Entity> entities = new ArrayList<>();
 	public EntityPlayer player;
 	
@@ -66,6 +55,10 @@ public class Level
 	
 	public RenderEngine renderEngine;
 	private HMS_Gotland game;
+
+	private long lastTick;
+
+	private float time;
 
 	
 	public Level(String name, HMS_Gotland gotland)
@@ -84,13 +77,21 @@ public class Level
 		
 	}
 	
+	public void time(float f)
+	{
+		time = f;
+	}
+	
 	public void tick()
 	{
-		level.stepSimulation(1/60F);
-		
-		for(int i = 0; i < entities.size(); i++)
+		if((Sys.getTime() - lastTick) * time>= 16)
 		{
-			entities.get(i).tick();
+			for(int i = 0; i < entities.size(); i++)
+			{
+				entities.get(i).tick();
+			}
+			lastTick = Sys.getTime();
+			level.stepSimulation(1/60F);
 		}
 	}
 	
@@ -132,7 +133,7 @@ public class Level
 		
 		level = new DiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
 		level.setGravity(new Vector3f(0F, -9.82F, 0F));
-		level.getDispatchInfo().allowedCcdPenetration = 0f;
+		level.getDispatchInfo().allowedCcdPenetration = 0.1f;
 	}
 	
 	public void explosion(Vector3f pos, float power)
@@ -229,11 +230,6 @@ public class Level
 								t.rotZ(Float.valueOf(lines[4]));
 								player.getWorldTransform().set(t);
 							}
-							
-							if("damage".equals(lines[1]) && lines.length > 2)
-							{
-								
-							}
 						} catch (NumberFormatException e)
 						{
 							e.printStackTrace();
@@ -284,7 +280,7 @@ public class Level
 						RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, myMotionState, groundShape, localInertia);
 						levelbody = new RigidBody(rbInfo);
 						levelbody.setRestitution(0.1f);
-						levelbody.setFriction(0.10f);
+						levelbody.setFriction(0.50f);
 						levelbody.setDamping(0f, 0f);
 						//Add level body to level
 						level.addRigidBody(levelbody);
@@ -323,5 +319,12 @@ public class Level
 	public void reloadLevel()
 	{
 		parseLevelFile(levelFile);
+	}
+	
+	//BulletHole struct
+	public class BulletHole
+	{
+		Vector3f position;
+		Vector3f normal;
 	}
 }

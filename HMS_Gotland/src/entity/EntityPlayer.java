@@ -21,7 +21,7 @@ public class EntityPlayer extends Entity
 	@Override
 	protected String getEntityModelName()
 	{
-		return "gpa_robotics_war.md2";
+		return "war.md2";
 	}
 
 

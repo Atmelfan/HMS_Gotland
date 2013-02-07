@@ -38,7 +38,6 @@ public class ModelPool
 		}
 		else if(file.getName().endsWith(".md2"))
 		{
-			System.out.println("k");
 			model = new ModelMD2(file, true);
 		}
 		

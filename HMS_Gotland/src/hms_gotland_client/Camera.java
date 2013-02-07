@@ -7,7 +7,6 @@ package hms_gotland_client;
 import java.nio.FloatBuffer;
 
 import org.lwjgl.BufferUtils;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
@@ -34,11 +33,6 @@ public class Camera
 	public float pitch = 180;
 	public float roll;
 	private float[] matrix = new float[16];
-
-	static final int VIEW_MATRIX          = 1;// view matrix id
-	static final int PROJECTION_MATRIX    = 2;// projection matrix id
-	static final int VIEWPROJ_MATRIX	  = 3;
-	static final int THE_MATRIX           = 4;// ???
 	
 	public Camera(float width, float height, float near, float far)
 	{
@@ -55,17 +49,23 @@ public class Camera
 		{
 			viewMatrix.translate(new Vector3f(0F, 0F, -thirdPersonRadius));
 		}
+		viewMatrix.rotate((float) Math.toRadians(180), new Vector3f(0, 0, 1));
 		viewMatrix.rotate((float) Math.toRadians(pitch), new Vector3f(1, 0, 0));
 		viewMatrix.rotate((float) Math.toRadians(yaw), new Vector3f(0, 1, 0));
-		//viewMatrix.rotate((float) Math.toRadians(roll), new Vector3f(0, 0, 1));
 		
 		if(owner != null)
 		{
-			viewMatrix.translate(VectorUtil.toLWJGLVector(owner.getPos()));
+			javax.vecmath.Vector3f npos = new javax.vecmath.Vector3f(owner.getPos());
+			npos.negate();
+			viewMatrix.translate(VectorUtil.toLWJGLVector(npos));
 		}else
 		{
 			viewMatrix.translate(pos);
 		}
+		
+		
+		
+		
 		Matrix4f v = new Matrix4f();
 		Matrix4f.mul(projectionMatrix, viewMatrix, v);
 		FloatBuffer f = BufferUtils.createFloatBuffer(16);

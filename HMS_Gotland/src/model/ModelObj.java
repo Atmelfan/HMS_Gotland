@@ -13,12 +13,9 @@ import java.util.ArrayList;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
-import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-
 import Util.GLUtil;
 import Util.ShaderUtils;
 import Util.VertexData;
@@ -238,27 +235,30 @@ public class ModelObj extends Model
 		{
 			float[] coords = new float[4];
 			
-			coords[0] = ((float[])(vertexsets.get(i)))[0] - leftpoint - xshift;
-			coords[1] = ((float[])(vertexsets.get(i)))[1] - bottompoint - yshift;
-			coords[2] = ((float[])(vertexsets.get(i)))[2] - farpoint - zshift;
+			coords[0] = (vertexsets.get(i))[0] - leftpoint - xshift;
+			coords[1] = (vertexsets.get(i))[1] - bottompoint - yshift;
+			coords[2] = (vertexsets.get(i))[2] - farpoint - zshift;
 			
 			vertexsets.set(i, coords); // = coords;
 		}
 		
 	}
 	
+	@Override
 	public float getXWidth() {
 		float returnval = 0;
 		returnval = rightpoint - leftpoint;
 		return returnval;
 	}
 	
+	@Override
 	public float getYHeight() {
 		float returnval = 0;
 		returnval = toppoint - bottompoint;
 		return returnval;
 	}
 	
+	@Override
 	public float getZDepth() {
 		float returnval = 0;
 		returnval = nearpoint - farpoint;
@@ -337,6 +337,7 @@ public class ModelObj extends Model
 		GLUtil.cerror(getClass().getName() + " compileVBO");
 	}
 	
+	@Override
 	public void draw(float frame, float[] vpMatrix, float[] matrix)
 	{	
 		ShaderUtils.useProgram(shader_id);
@@ -361,6 +362,7 @@ public class ModelObj extends Model
 		ShaderUtils.useProgram(0);
 	}
 	
+	@Override
 	public void destroy()
 	{
 		GL30.glBindVertexArray(vaoId);
