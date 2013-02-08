@@ -32,7 +32,7 @@ public class Entity
 	public Entity(Level level, Vector3f pos, float mass)
 	{
 		this.level = level;
-		setModel(level.renderEngine.getModel(getEntityModelName()));
+		setModel(level.modelpool.getModel(getEntityModelName()));
 		// Collision form
 		BoxShape shape = new BoxShape(new Vector3f(getModel().getXWidth(), getModel().getYHeight(), getModel().getZDepth()));
  	    Vector3f localInertia = new Vector3f(0, 0, 0);

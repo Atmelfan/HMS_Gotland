@@ -24,6 +24,11 @@ import Util.OSUtil;
 
 public class HMS_Gotland
 {
+	/* Game client
+	 * Everything else is the server(except Utils)
+	 * 
+	 * 
+	 */
 	public static void main(String[] args) 
 	{
 		new HMS_Gotland();
@@ -33,19 +38,17 @@ public class HMS_Gotland
 	private final String WINDOW_TITLE = "HMS Gotland - fps: ";
 	private final int WIDTH = 1024;
 	private final int HEIGHT = 512;
-	// Texture variables
-	private int[] texIds = new int[] {0, 0};
-	private int textureSelector = 0;
 	// Moving variables
 	
 	long lastFrame = 0;
 	private int fps;
 	private int currentfps;
 	
-	Level level;
+	ClientLevel level;
 	public RenderEngine renderEngine;
 
 	private Wardos wardos;
+	private int texId;
 	
 	public HMS_Gotland() 
 	{
@@ -66,7 +69,7 @@ public class HMS_Gotland
 		System.out.println("Tesselation: " + GLContext.getCapabilities().GL_ARB_tessellation_shader);
 		System.out.println("==========================INFO==========================");
 		
-		level = new Level("test", this);
+		level = new ClientLevel(this);
 		GLUtil.cerror(getClass().getName() + " level load");
 		
 		setupTextures();
@@ -76,7 +79,6 @@ public class HMS_Gotland
 		renderEngine.camera.owner = getPlayer();
 		
 		lastFrame = Sys.getTime();
-		level.time(1f);
 		
 		while (!Display.isCloseRequested()) 
 		{
@@ -106,8 +108,7 @@ public class HMS_Gotland
 	}
 
 	private void setupTextures() {
-		texIds[0] = GLUtil.loadPNGTexture("Resources/assets/asset1.png", GL13.GL_TEXTURE0);
-		texIds[1] = GLUtil.loadPNGTexture("Resources/assets/asset2.png", GL13.GL_TEXTURE0);
+		texId = GLUtil.loadPNGTexture("Resources/assets/asset1.png", GL13.GL_TEXTURE0);
 	}
 	
 	private void logicCycle() 
@@ -145,27 +146,15 @@ public class HMS_Gotland
 			// Switch textures depending on the key released
 			switch (Keyboard.getEventKey()) 
 			{
-			case Keyboard.KEY_1:
-				textureSelector = 0;
-				break;
-			case Keyboard.KEY_2:
-				textureSelector = 1;
-				break;
 				/*
 				 * Game control keys
 				 */
 			case Keyboard.KEY_ESCAPE:
 				Mouse.setGrabbed(false);
 				break;
-			case Keyboard.KEY_F5:
-				level.reloadLevel();
-				break;
 				/*
 				 * Movement keys
 				 */
-			case Keyboard.KEY_Q:
-				level.addEntity(EntityList.getEntity("default", level, getPlayer().getPos()));
-				break;
 			case Keyboard.KEY_W:
 				getPlayer().move(new Vector3f(xt, 0f, -yt));
 				break;
@@ -198,7 +187,7 @@ public class HMS_Gotland
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texIds[textureSelector]);
+		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
 		
 		renderEngine.drawStarField();
 		level.draw();
@@ -216,8 +205,7 @@ public class HMS_Gotland
 	
 	private void destroyOpenGL() {	
 		// Delete the texture
-		GL11.glDeleteTextures(texIds[0]);
-		GL11.glDeleteTextures(texIds[1]);
+		GL11.glDeleteTextures(texId);
 		level.destroy();
 		
 		Display.destroy();
@@ -226,7 +214,7 @@ public class HMS_Gotland
 	/**
 	 * @return the player
 	 */
-	public EntityPlayer getPlayer()
+	public ClientPlayer getPlayer()
 	{
 		return level.player;
 	}
@@ -234,7 +222,7 @@ public class HMS_Gotland
 	/**
 	 * @param player the player to set
 	 */
-	public void setPlayer(EntityPlayer player)
+	public void setPlayer(ClientPlayer player)
 	{
 		level.player = player;
 	}

@@ -1,8 +1,7 @@
 package level;
 
 
-import hms_gotland_client.HMS_Gotland;
-import hms_gotland_client.RenderEngine;
+import hms_gotland_server.HMS_Gotland_Server;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -13,8 +12,6 @@ import java.util.ArrayList;
 
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
-
-import org.lwjgl.Sys;
 
 import com.bulletphysics.collision.broadphase.AxisSweep3;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
@@ -35,6 +32,7 @@ import entity.EntityList;
 import entity.EntityPlayer;
 
 import model.ModelObj;
+import model.ModelPool;
 import Util.VertexData;
 
 public class Level
@@ -43,33 +41,24 @@ public class Level
 	
 	private File levelFile;
 	
-	public ArrayList<BulletHole> bulletHoles = new ArrayList<>();
 	public ArrayList<Entity> entities = new ArrayList<>();
-	public EntityPlayer player;
 	
 	public String name;
 	
+	//Physics
 	public ModelObj model;
 	public RigidBody levelbody;
 	public DynamicsWorld level;
+	public ModelPool modelpool;
 	
-	public RenderEngine renderEngine;
-	private HMS_Gotland game;
-
-	private long lastTick;
-
-	private float time;
-
+	private HMS_Gotland_Server game;
 	
-	public Level(String name, HMS_Gotland gotland)
+	public Level(String name, HMS_Gotland_Server hms_Gotland_Server)
 	{
-		game = gotland;
-		renderEngine = gotland.renderEngine;
+		game = hms_Gotland_Server;
+		modelpool = new ModelPool();
 		//Setup bullet world
 		setupWorld();
-		//Create player
-		player = new EntityPlayer(this, new Vector3f(0, 0, 0));
-		addEntity(player);
 		//Read level save file
 		levelFile = new File(DEFAULT_LEVEL_PATH + name);
 		parseLevelFile(levelFile);
@@ -77,22 +66,13 @@ public class Level
 		
 	}
 	
-	public void time(float f)
-	{
-		time = f;
-	}
-	
 	public void tick()
 	{
-		if((Sys.getTime() - lastTick) * time>= 16)
+		for(int i = 0; i < entities.size(); i++)
 		{
-			for(int i = 0; i < entities.size(); i++)
-			{
-				entities.get(i).tick();
-			}
-			lastTick = Sys.getTime();
-			level.stepSimulation(1/60F);
+			entities.get(i).tick();
 		}
+		level.stepSimulation(1/60F);
 	}
 	
 	public void addEntity(Entity entity)
@@ -105,21 +85,6 @@ public class Level
 	{
 		entities.remove(entity);
 		level.removeRigidBody(entity.getBody());
-	}
-	
-	public void draw()
-	{
-		if(model != null)
-		{
-			//Draw level data
-			float[] temp = new float[16];
-			levelbody.getWorldTransform(new Transform()).getOpenGLMatrix(temp);
-			model.draw(0, renderEngine.getViewProjectionMatrix(), temp);
-		}
-		for (int i = 0; i < entities.size(); i++)
-		{
-			entities.get(i).draw(renderEngine);
-		}
 	}
 	
 	private void setupWorld()
@@ -170,15 +135,6 @@ public class Level
 				lineCount++;
 				line = line.toLowerCase().trim();
 				
-				//&model command points to models used in this level
-				if(line.startsWith("&models"))
-				{
-					String[] lines = line.split(" ");
-					if(lines.length > 1)
-					{
-						renderEngine.modelpool.loadFolder(new File(file, lines[1]));
-					}
-				}
 				if(line.startsWith("&entity"))
 				{
 					String[] lines = line.split(" ");
@@ -212,33 +168,7 @@ public class Level
 				}
 				if(line.startsWith("&player"))
 				{
-					String[] lines = line.split(" ");
-					if(lines.length > 1)
-					{
-						try
-						{
-							if("pos".equals(lines[1]) && lines.length > 4)
-							{
-								player.setPos(new Vector3f(Float.valueOf(lines[2]), Float.valueOf(lines[3]), Float.valueOf(lines[4])));
-							}
-							
-							if("angle".equals(lines[1]) && lines.length > 4)
-							{
-								Matrix3f t = player.getWorldTransform().basis;
-								t.rotX(Float.valueOf(lines[2]));
-								t.rotY(Float.valueOf(lines[3]));
-								t.rotZ(Float.valueOf(lines[4]));
-								player.getWorldTransform().set(t);
-							}
-						} catch (NumberFormatException e)
-						{
-							e.printStackTrace();
-							throw new InvalidLevelException(file.getName(), "Malformed &player command", lineCount);
-						}
-					}else
-					{
-						throw new InvalidLevelException(file.getName(), "Invalid &player command", lineCount);
-					}
+					//TODO
 				}
 				if(line.startsWith("&name"))
 				{

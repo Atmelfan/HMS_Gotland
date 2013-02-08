@@ -23,7 +23,7 @@ public class Camera
 	public boolean thirdPerson = false;
 	public float thirdPersonRadius = 10F;
 	
-	public Entity owner;
+	public ClientPlayer owner;
 	
 	public Vector3f pos = new Vector3f();
 	
