@@ -1,10 +1,10 @@
-package entity;
+package level;
 import javax.vecmath.Vector3f;
 
-import level.Level;
 
 import com.bulletphysics.linearmath.MatrixUtil;
 import com.bulletphysics.linearmath.Transform;
+
 
 public class EntityPlayer extends Entity
 {

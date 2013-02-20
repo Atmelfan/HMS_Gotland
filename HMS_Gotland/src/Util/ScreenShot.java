@@ -31,14 +31,14 @@ class ScreenShotSaveThread extends Thread
 {
 	private ByteBuffer buffer;
 
-	private SimpleDateFormat file_time = new SimpleDateFormat("HH.mm.ss");
+	private SimpleDateFormat file_time = new SimpleDateFormat("ddd-HH.mm.ss");
 	private SimpleDateFormat folder_date = new SimpleDateFormat("YY-MMM");
 	
 	public ScreenShotSaveThread(ByteBuffer buffer)
 	{
 		super("ScreenShotSaveThread");
 		this.buffer = buffer;
-
+		setPriority(MIN_PRIORITY);
 	}
 	
 	@Override

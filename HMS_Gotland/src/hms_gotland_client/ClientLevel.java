@@ -4,6 +4,10 @@ import java.util.ArrayList;
 
 import javax.vecmath.Vector3f;
 
+import org.lwjgl.Sys;
+
+import level.Entity;
+import level.EntityPlayer;
 import level.Level.BulletHole;
 import model.Model;
 
@@ -15,8 +19,6 @@ import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 import com.bulletphysics.linearmath.Transform;
 
-import entity.Entity;
-import entity.EntityPlayer;
 
 
 public class ClientLevel
@@ -29,12 +31,15 @@ public class ClientLevel
 	private RigidBody levelbody;
 	RenderEngine renderEngine;
 	public ClientPlayer player;
+	private long lastTick;
 	
 	public ClientLevel(HMS_Gotland gotland)
 	{
 		renderEngine = gotland.renderEngine;
-		player = new ClientPlayer(this, "gpa_robotics_war.md2", 0);
 		setupWorld();
+		player = new ClientPlayer(this, "war.md2", 0);
+		addEntity(player);
+		
 	}
 	
 	private void setupWorld()
@@ -70,7 +75,7 @@ public class ClientLevel
 			//Draw level data
 			float[] temp = new float[16];
 			levelbody.getWorldTransform(new Transform()).getOpenGLMatrix(temp);
-			model.draw(0, renderEngine.getViewProjectionMatrix(), temp);
+			model.draw(0, renderEngine.getViewProjectionMatrix(), temp, renderEngine);
 		}
 		for (int i = 0; i < entities.size(); i++)
 		{
@@ -85,7 +90,15 @@ public class ClientLevel
 	
 	public void tick()
 	{
-		// TODO Auto-generated method stub
+		if(lastTick - Sys.getTime() >= 16)
+		{
+			lastTick = Sys.getTime();
+			for (ClientEntity entity : entities)
+			{
+				//TODO
+			}
+			level.stepSimulation(1/60F);
+		}
 		
 	}
 

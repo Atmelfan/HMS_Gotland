@@ -10,6 +10,7 @@ import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+import org.lwjgl.opengl.GL31;
 import org.lwjgl.util.glu.GLU;
 
 import Util.GLUtil;
@@ -17,7 +18,7 @@ import Util.ShaderUtils;
 
 public class Wardos
 {	
-	private int gui_id;
+	int gui_id;
 	private int vaoId;
 	private int vsId;
 	private int fsId;
@@ -29,6 +30,9 @@ public class Wardos
 	private int vbocId;
 	private FontRenderer font;
 	private HMS_Gotland game;
+	private int fboID;
+	int texID;
+	private int rboID;
 	
 	public Wardos(HMS_Gotland game)
 	{
@@ -39,6 +43,33 @@ public class Wardos
 		setupQuad();
 		gui_id = GLUtil.loadPNGTexture("Resources/assets/WardosScreen.png", GL13.GL_TEXTURE0);
 		font = new FontRenderer("Agency FB", 60);
+	}
+	
+	public void setupFBO()
+	{
+		fboID = GL30.glGenFramebuffers();
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fboID);
+		{
+			texID = GL11.glGenTextures();
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, 1024, 512, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, 0);
+			// Poor filtering. Needed !
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+			
+			rboID = GL30.glGenRenderbuffers();
+			GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, rboID);
+			{
+				GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, 1024, 512);
+				GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, rboID);
+				
+				GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,GL11.GL_TEXTURE_2D, texID, 0);
+				
+				GL20.glDrawBuffers(GL30.GL_COLOR_ATTACHMENT0);
+			}
+			GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, 0);
+		}
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 	}
 	
 	public void setupShader()
@@ -56,7 +87,7 @@ public class Wardos
 		GL20.glValidateProgram(shader_id);
 	}
 	
-	public void _render()
+	public void draw()
 	{
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		ShaderUtils.useProgram(shader_id);
@@ -124,7 +155,7 @@ public class Wardos
 			// A VBO is a collection of Vectors which in this case resemble the location of each vertex.
 			vbovId = GL15.glGenBuffers();
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbovId);
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, GLUtil.buffer(vertices), GL15.GL_STREAM_DRAW);
+			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, GLUtil.buffer(vertices), GL15.GL_STATIC_DRAW);
 			// Put the VBO in the attributes list at index 0
 			GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
 			

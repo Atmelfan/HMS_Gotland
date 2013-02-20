@@ -4,18 +4,11 @@
 //Level data(stored as .obj)
 &obj ship.obj
 
-//&exit, exit to next level(unlimited amounts of exits)
-//Game will load next level during play if preload == true(decreases game performance but nullifies level load time)
-//args &exit <level name> <preload level(true/false)> <x> <y> <z>
-&exit start true 0 0 0
-
-//sets player pos and angle
-&player pos 0 25 0
-//&player angle 0 0 0
-
 //Add a test entity
 &entity default 0 15 9 {
-	pos 0 20 0
+	&model war.md2
+	&phys war.obj
+	&pos 0 20 0
 }
 
 &entity default -2.5 20 0

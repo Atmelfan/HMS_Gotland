@@ -8,8 +8,8 @@ import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
 import com.bulletphysics.linearmath.Transform;
 
-import entity.EntityMotionState;
 
+import level.EntityMotionState;
 import level.Level;
 import model.Model;
 
@@ -20,7 +20,7 @@ public class ClientEntity
 	public int frame;
 	
 	public RigidBody body;
-	private EntityMotionState motionstate;
+	protected EntityMotionState motionstate;
 	
 	public ClientEntity(ClientLevel lvl, String model, int id)
 	{
@@ -55,6 +55,6 @@ public class ClientEntity
 	public void draw(RenderEngine engine)
 	{
 		motionstate.getWorldTransform().getOpenGLMatrix(modelMatrix);
-		model.draw(frame, engine.getViewProjectionMatrix(), modelMatrix);
+		model.drawCEL(frame, engine.getViewProjectionMatrix(), modelMatrix, engine);
 	}
 }

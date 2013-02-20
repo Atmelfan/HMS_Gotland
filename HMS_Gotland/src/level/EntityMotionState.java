@@ -1,4 +1,4 @@
-package entity;
+package level;
 
 import com.bulletphysics.linearmath.MotionState;
 import com.bulletphysics.linearmath.Transform;

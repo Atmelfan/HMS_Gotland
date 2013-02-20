@@ -338,7 +338,7 @@ public class ModelObj extends Model
 	}
 	
 	@Override
-	public void draw(float frame, float[] vpMatrix, float[] matrix)
+	public void draw(float frame, float[] vpMatrix, float[] matrix, RenderEngine engine)
 	{	
 		ShaderUtils.useProgram(shader_id);
 		{

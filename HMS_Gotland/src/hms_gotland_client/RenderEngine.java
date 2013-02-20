@@ -69,6 +69,10 @@ public class RenderEngine
 		GL11.glDepthFunc(GL11.GL_LEQUAL);
 		GL11.glEnable(GL11.GL_BLEND); 
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
+		
+		GL11.glEnable(GL11.GL_CULL_FACE);
+		GL11.glCullFace(GL11.GL_FRONT);
+		
 		setupStarField();
 		GLUtil.cerror(getClass().getName() + " <init>");
 	}
@@ -101,7 +105,7 @@ public class RenderEngine
 			starVertices[i + 1] = (float) (distance * Math.sin(yaw));
 			starVertices[i + 2] = (float) (distance * Math.cos(pitch));
 			
-			starColors[i + 0] = (float) Math.random() + 0.5f;
+			starColors[i + 0] = (float) Math.random() + 0.8f;
 			starColors[i + 1] = 0.9f;
 			starColors[i + 2] = 0.9f;
 			starColors[i + 3] = (float) Math.random() + 0.2f;

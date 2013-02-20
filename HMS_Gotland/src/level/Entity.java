@@ -1,8 +1,7 @@
-package entity;
+package level;
 
 import javax.vecmath.Vector3f;
 
-import level.Level;
 
 import model.Model;
 
@@ -105,13 +104,6 @@ public class Entity
 	protected String getEntityModelName()
 	{
 		return "gpa_robotics_war.obj";
-	}
-
-	public void draw(RenderEngine renderEngine)
-	{
-		float[] temp = new float[16];
-		body.getWorldTransform(new Transform()).getOpenGLMatrix(temp);
-		model.draw(0, renderEngine.getViewProjectionMatrix(), temp);
 	}
 	
 	protected float getFrame()

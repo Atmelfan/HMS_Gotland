@@ -18,6 +18,6 @@ public class InvalidLevelException extends Exception
 	@Override
 	public String getMessage()
 	{
-		return level + "-" + message + "@line " + line;
+		return level + " - " + message + " @line " + line;
 	}
 }

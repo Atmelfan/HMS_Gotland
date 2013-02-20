@@ -1,4 +1,6 @@
-package hms_gotland_server;
+package hms_gotland_client;
+
+import hms_gotland_server.Packet;
 
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
@@ -9,7 +11,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-public class ClientInterface
+public class ServerInterface
 {
 	public List<Packet> inputQueue 	= Collections.synchronizedList(new ArrayList<Packet>());
 	public List<Packet> outputQueue = Collections.synchronizedList(new ArrayList<Packet>());
@@ -18,7 +20,7 @@ public class ClientInterface
 	public boolean terminate = false;
 	public Socket client;
 	
-	public ClientInterface(Socket client)
+	public ServerInterface(Socket client)
 	{
 		this.client = client;
 		try
@@ -27,19 +29,29 @@ public class ClientInterface
 			clientWriter = new TCPWrite(new DataOutputStream(client.getOutputStream()));
 			clientReader.start();
 			clientWriter.start();
+			
+			Packet.Login loginRequest = new Packet.Login();
+			loginRequest.name = "testPlayer";
+			outputQueue.add(loginRequest);
 		} catch (IOException e)
 		{
-			System.err.println("Error: Client.Client() - " + e.getMessage());
+			System.err.println("Error: Server.Server() - " + e.getMessage());
 		}
-		
-		Packet.Login loginRequest = new Packet.Login();
-		loginRequest.name = "login";
-		outputQueue.add(loginRequest);
 	}
 
 	public void tick()
 	{
-		
+		synchronized (inputQueue)
+		{
+			for (Packet packet : inputQueue)
+			{
+				if(packet instanceof Packet.Login)
+				{
+					//TODO
+				}
+			}
+			inputQueue.clear();
+		}
 	}
 	
 	public void terminate()
@@ -48,24 +60,21 @@ public class ClientInterface
 		try
 		{
 			client.close();
-		} catch(SocketException e)
-		{
-			
 		} catch (IOException e)
 		{
-			System.err.println("Error: Client.terminate() - " + e.getMessage());
+			System.err.println("Error: ServerInterface.terminate() - " + e.getMessage());
 		}
 		clientReader.interrupt();
 		clientWriter.interrupt();
 	}
-	/*TCPReader*/
+	
 	private class TCPRead extends Thread
 	{
 		private DataInputStream in;
 		
 		public TCPRead(DataInputStream input)
 		{
-			super("Server-TCPReader");
+			super("Client-TCPReader");
 			in = input;
 		}
 		
@@ -78,9 +87,9 @@ public class ClientInterface
 				{
 					int id = in.readInt();
 					Packet packet = Packet.getPacket(id);
-					System.out.println("rs: " + id);
 					packet.read(in);
 					inputQueue.add(packet);
+					System.out.println(packet);
 				} catch (IOException e)
 				{
 					if(!terminate)
@@ -91,14 +100,13 @@ public class ClientInterface
 		}
 	}
 	
-	/*TCPWriter*/
 	private class TCPWrite extends Thread
 	{
 		private DataOutputStream out;
 		
 		public TCPWrite(DataOutputStream output)
 		{
-			super("Server-TCPWriter");
+			super("Client-TCPWriter");
 			out = output;
 		}
 		
@@ -109,18 +117,13 @@ public class ClientInterface
 			{
 				try
 				{
-					synchronized (outputQueue)
+					for (Packet packet : outputQueue)
 					{
-						for (Packet packet : outputQueue)
-						{
-							packet.writeID(out);
-							packet.write(out);
-							System.out.println("ss: " + packet.getID());
-						}
-						outputQueue.clear();
+						packet.writeID(out);
+						packet.write(out);
 					}
-					
-				}catch (IOException e)
+					outputQueue.clear();
+				} catch (IOException e)
 				{
 					if(!terminate)
 						System.err.println("Error: TCPWrite.run() - " + e.getMessage());

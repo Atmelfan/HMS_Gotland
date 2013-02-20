@@ -204,7 +204,7 @@ public class GLUtil
 	public static FloatBuffer buffer(float... values)
 	{
 		FloatBuffer temp = BufferUtils.createFloatBuffer(values.length);
-		temp.put(values);
+		temp.put(values, 0, values.length);
 		temp.flip();
 		return temp;
 	}

@@ -17,7 +17,7 @@ public class ClientPlayer extends ClientEntity
 
 	public Vector3f getPos()
 	{
-		return null;
+		return motionstate.getWorldTransform().origin;
 	}
 	
 

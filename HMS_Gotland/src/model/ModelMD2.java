@@ -1,5 +1,7 @@
 package model;
 
+import hms_gotland_client.RenderEngine;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -13,6 +15,7 @@ import javax.vecmath.Vector3f;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
+import org.lwjgl.opengl.GL12;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
@@ -105,8 +108,18 @@ public class ModelMD2 extends Model
 		GL11.glDeleteTextures(tex_id);
 	}
 
+	public void drawCEL(float frame, float[] vpMatrix, float[] matrix, RenderEngine engine)
+	{
+		GL11.glPolygonMode(GL11.GL_BACK, GL11.GL_LINE);
+		GL11.glCullFace(GL11.GL_FRONT); 
+		draw(frame, vpMatrix, matrix, engine);
+		GL11.glPolygonMode(GL11.GL_BACK, GL11.GL_FILL);
+		GL11.glCullFace(GL11.GL_BACK);
+		draw(frame, vpMatrix, matrix, engine);
+	}
+	
 	@Override
-	public void draw(float frame, float[] vpMatrix, float[] matrix)
+	public void draw(float frame, float[] vpMatrix, float[] matrix, RenderEngine engine)
 	{
 		if(frame < 0 || frame > header.num_frames - 1) return;
 			
@@ -124,9 +137,11 @@ public class ModelMD2 extends Model
 			ShaderUtils.setUniformMatrix4(shader_id, "viewprojMatrix", vpMatrix);
 			ShaderUtils.setUniformMatrix4(shader_id, "modelMatrix", matrix);
 			ShaderUtils.setUniformVar(shader_id, "frame_interpolated", (float)(frame - Math.floor(frame)));
+			ShaderUtils.setUniformVar(shader_id, "cameraDir", engine.camera.yaw, engine.camera.pitch, engine.camera.roll);
 			//Bind frames to VAO
 			GL30.glBindVertexArray(vao_id);
 			{
+				
 				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, frame_0);//Bind frame 0
 				{
 					GL20.glVertexAttribPointer(0, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);

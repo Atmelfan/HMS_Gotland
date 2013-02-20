@@ -3,8 +3,10 @@ package hms_gotland_server;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.HashMap;
 
 import javax.vecmath.Matrix3f;
+import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
 
 public abstract class Packet
@@ -15,13 +17,38 @@ public abstract class Packet
 		output.writeByte(getID());
 	}
 	
-	abstract void write(DataOutputStream output) throws IOException;
-	abstract void read(DataInputStream input) throws IOException;
-	abstract int getID();
+	public abstract void write(DataOutputStream output) throws IOException;
+	public abstract void read(DataInputStream input) throws IOException;
+	public abstract int getID();
 	
 	////////Packets////////
 	
-	public class Login extends Packet
+	public static Packet getPacket(int packetID)
+	{
+		try
+		{
+			return packets.get(packetID).newInstance();
+		} catch (InstantiationException e)
+		{
+			System.err.println("Error: Packet.getPacket() - " + e.getMessage());
+		} catch (IllegalAccessException e)
+		{
+			System.err.println("Error: Packet.getPacket() - " + e.getMessage());
+		}
+		return null;
+	}
+	
+	private static HashMap<Integer, Class<? extends Packet>> packets = new HashMap<>();
+	
+	static
+	{
+		packets.put(0, Login.class);
+		packets.put(1, Position.class);
+		packets.put(2, Angle.class);
+		packets.put(3, CreateEntity.class);
+	}
+	
+	public static class Login extends Packet
 	{
 		public String name;
 		
@@ -34,10 +61,11 @@ public abstract class Packet
 		@Override
 		public void read(DataInputStream input) throws IOException
 		{
-			readString(name, input);
+			name = readString(input);
 		}
 
 		@Override
+		public
 		int getID()
 		{
 			return 0;
@@ -45,65 +73,107 @@ public abstract class Packet
 		
 	}
 	
-	public class Position extends Packet
+	
+	private static abstract class Entity extends Packet
+	{
+		public int entityID;
+		
+		@Override
+		public void write(DataOutputStream output) throws IOException
+		{
+			output.writeInt(entityID);
+		}
+
+		@Override
+		public void read(DataInputStream input) throws IOException
+		{
+			entityID = input.readInt();
+		}
+
+		@Override
+		public abstract int getID();
+		
+	}
+	
+	public static class CreateEntity extends Entity
+	{
+		public String model;
+		
+		@Override
+		public void write(DataOutputStream output) throws IOException
+		{
+			writeString(model, output);
+		}
+
+		@Override
+		public void read(DataInputStream input) throws IOException
+		{
+			model = readString(input);
+		}
+		
+		@Override
+		public int getID()
+		{
+			return 3;
+		}
+		
+	}
+	
+	public static class Position extends Entity
 	{
 		public Vector3f origin;
 		
 		@Override
-		void write(DataOutputStream output) throws IOException
+		public void write(DataOutputStream output) throws IOException
 		{
+			super.write(output);
 			output.writeFloat(origin.x);
 			output.writeFloat(origin.y);
 			output.writeFloat(origin.z);
 		}
 
 		@Override
-		void read(DataInputStream input) throws IOException
+		public void read(DataInputStream input) throws IOException
 		{
+			super.read(input);
 			origin.x = input.readFloat();
 			origin.y = input.readFloat();
 			origin.z = input.readFloat();
 		}
 		
 		@Override
-		int getID()
+		public int getID()
 		{
 			return 1;
 		}
 		
 	}
 	
-	public class Angle extends Packet
+	public static class Angle extends Entity
 	{
-		public Matrix3f basis;
+		public Quat4f basis;
 		@Override
-		void write(DataOutputStream output) throws IOException
+		public void write(DataOutputStream output) throws IOException
 		{
-			for (int i = 0; i < 3; i++)
-			{
-				float[] t = new float[3];
-				basis.getRow(i, t);
-				output.writeFloat(t[0]);
-				output.writeFloat(t[1]);
-				output.writeFloat(t[2]);
-			}
+			super.write(output);
+			output.writeFloat(basis.x);
+			output.writeFloat(basis.y);
+			output.writeFloat(basis.z);
+			output.writeFloat(basis.w);
 		}
 
 		@Override
-		void read(DataInputStream input) throws IOException
+		public void read(DataInputStream input) throws IOException
 		{
-			for (int i = 0; i < 3; i++)
-			{
-				float[] t = new float[3];
-				t[0] = input.readFloat();
-				t[1] = input.readFloat();
-				t[2] = input.readFloat();
-				basis.setRow(i, t);
-			}
+			super.read(input);
+			basis.x = input.readFloat();
+			basis.y = input.readFloat();
+			basis.z = input.readFloat();
+			basis.w = input.readFloat();
 		}
 
 		@Override
-		int getID()
+		public int getID()
 		{
 			return 2;
 		}
@@ -119,7 +189,7 @@ public abstract class Packet
 		output.write(sbytes);
 	}
 	
-	protected String readString(String s, DataInputStream input) throws IOException
+	protected String readString(DataInputStream input) throws IOException
 	{
 		int length = input.readInt();
 		byte[] sbytes = new byte[length];

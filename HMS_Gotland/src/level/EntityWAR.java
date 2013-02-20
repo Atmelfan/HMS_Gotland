@@ -1,7 +1,7 @@
-package entity;
+package level;
 
 import javax.vecmath.Vector3f;
-import level.Level;
+
 
 public class EntityWAR extends Entity
 {	

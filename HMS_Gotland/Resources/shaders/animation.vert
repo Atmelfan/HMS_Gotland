@@ -21,6 +21,6 @@ void main(void)
 	// Override gl_Position with our new calculated position
 	gl_Position = viewprojMatrix * modelMatrix * (in_Position_0 + ((in_Position_0 - in_Position_1) * frame_interpolated));
 	
-	pass_Normal = in_Normal_0 + ((in_Normal_0 - in_Normal_1) * frame_interpolated);
+	pass_Normal = normalize(in_Normal_0 + ((in_Normal_0 - in_Normal_1) * frame_interpolated));
 	pass_TextureCoord = in_TextureCoord_0 + ((in_TextureCoord_0 - in_TextureCoord_1) * frame_interpolated);
 }

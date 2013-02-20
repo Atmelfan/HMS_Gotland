@@ -6,13 +6,14 @@ package hms_gotland_client;
 
 import java.nio.FloatBuffer;
 
+import level.Entity;
+
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
 import Util.VectorUtil;
 
-import entity.Entity;
 
 /**
  * @author Atmelfan

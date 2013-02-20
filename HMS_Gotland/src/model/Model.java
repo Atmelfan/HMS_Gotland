@@ -1,8 +1,10 @@
 package model;
 
+import hms_gotland_client.RenderEngine;
+
 public class Model
 {
-	public void draw(float frame, float[] vpMatrix, float[] modelMatrix)
+	public void draw(float frame, float[] vpMatrix, float[] modelMatrix, RenderEngine engine)
 	{
 	}
 	
@@ -29,5 +31,9 @@ public class Model
 	public boolean isAnimated()
 	{
 		return false;
+	}
+
+	public void drawCEL(int frame, float[] viewProjectionMatrix, float[] modelMatrix, RenderEngine engine)
+	{
 	}
 }

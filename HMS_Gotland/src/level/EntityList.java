@@ -1,11 +1,11 @@
-package entity;
+package level;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 
 import javax.vecmath.Vector3f;
 
-import level.Level;
+
 
 public class EntityList
 {

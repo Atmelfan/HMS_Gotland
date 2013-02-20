@@ -27,9 +27,6 @@ import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
 import com.bulletphysics.util.ObjectArrayList;
 
-import entity.Entity;
-import entity.EntityList;
-import entity.EntityPlayer;
 
 import model.ModelObj;
 import model.ModelPool;
@@ -46,7 +43,7 @@ public class Level
 	public String name;
 	
 	//Physics
-	public ModelObj model;
+	public LevelMesh model;
 	public RigidBody levelbody;
 	public DynamicsWorld level;
 	public ModelPool modelpool;
@@ -159,11 +156,11 @@ public class Level
 							addEntity(e);
 						}else
 						{
-							throw new InvalidLevelException(file.getName(), "Invalid entity in level file", lineCount);
+							System.err.println("Invalid entity in level file");
 						}
 					}else
 					{
-						throw new InvalidLevelException(file.getName(), "Invalid &entity command", lineCount);
+						System.err.println("Invalid &entity command @line" + lineCount);
 					}
 				}
 				if(line.startsWith("&player"))
@@ -186,16 +183,17 @@ public class Level
 					String[] lines = line.split(" ");
 					if(lines.length > 1)
 					{
-						model = new ModelObj(new File(file, lines[1]), false);
+						model = new LevelMesh(new File(file, lines[1]), false);
 						
 						//Get vertex data
-						VertexData[] data = model.data.toArray(new VertexData[0]);
+						Vector3f[] data = model.mesh.toArray(new Vector3f[0]);
 						
 						//Assemble vertex data into hull vectors
 						ObjectArrayList<Vector3f> vertes = new ObjectArrayList<Vector3f>();
+						
 						for (int i = 0; i < data.length; i++)
 						{
-							vertes.add(new Vector3f(data[i].getXYZ()));
+							vertes.add(data[i]);
 						}
 						//Create body
 						//TriangleIndexVertexArray array = new TriangleIndexVertexArray(model.numpolygons(), );
@@ -214,7 +212,7 @@ public class Level
 						levelbody.setDamping(0f, 0f);
 						//Add level body to level
 						level.addRigidBody(levelbody);
-						model.data.clear();
+						model.mesh.clear();
 					}else
 					{
 						throw new InvalidLevelException(file.getName(), "Invalid &obj command", lineCount);
@@ -241,9 +239,7 @@ public class Level
 
 	public void destroy()
 	{
-		model.destroy();
 		level.destroy();
-		
 	}
 
 	public void reloadLevel()
