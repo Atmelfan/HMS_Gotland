@@ -6,7 +6,7 @@ import java.io.IOException;
 
 public class HMG_String extends HMG_Basic
 {
-	public char[] value;
+	public String value;
 	
 	
 	/* (non-Javadoc)
@@ -16,9 +16,14 @@ public class HMG_String extends HMG_Basic
 	public String toString()
 	{
 		return "HMG_String [name=" + String.valueOf(name) + ", value="
-				+ String.valueOf(value) + "]";
+				+ value + "]";
 	}
 
+	public HMG_String(String s)
+	{
+		value = s;
+	}
+	
 	public HMG_String()
 	{
 	}
@@ -33,21 +38,17 @@ public class HMG_String extends HMG_Basic
 	public void read(DataInputStream in) throws IOException
 	{
 		super.read(in);
-		value = new char[in.readInt()];
-		for(int i = 0; i < value.length; i++)
-		{
-			value[i] = in.readChar();
-		}
+		byte[] buffer = new byte[in.readInt()];
+		in.read(buffer);
+		value = new String(buffer, "UTF-8");
 	}
 	
 	@Override
 	public void write(DataOutputStream out) throws IOException
 	{
 		super.write(out);
-		out.writeInt(value.length);
-		for(int i = 0; i < value.length; i++)
-		{
-			out.writeChar(value[i]);
-		}
+		byte[] buffer = value.getBytes("UTF-8");
+		out.writeInt(buffer.length);
+		out.write(buffer);
 	}
 }

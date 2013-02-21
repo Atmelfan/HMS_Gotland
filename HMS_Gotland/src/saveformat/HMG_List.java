@@ -17,14 +17,14 @@ public class HMG_List extends HMG_Basic
 	
 	public HMG_List(String string)
 	{
-		name = string.toCharArray();
+		name = string;
 	}
 
 	//Get/set for integer
 	public void setInteger(String s, int i)
 	{
 		HMG_Integer t = new HMG_Integer();
-		t.name = s.toCharArray();
+		t.name = s;
 		t.value = i;
 		data.put(s, t);
 	}
@@ -45,7 +45,7 @@ public class HMG_List extends HMG_Basic
 	public void setFloat(String s, float i)
 	{
 		HMG_Float t = new HMG_Float();
-		t.name = s.toCharArray();
+		t.name = s;
 		t.value = i;
 		data.put(s, t);
 	}
@@ -66,8 +66,8 @@ public class HMG_List extends HMG_Basic
 	public void setString(String s, String i)
 	{
 		HMG_String t = new HMG_String();
-		t.name = s.toCharArray();
-		t.value = i.toCharArray();
+		t.name = s;
+		t.value = i;
 		data.put(s, t);
 	}
 	

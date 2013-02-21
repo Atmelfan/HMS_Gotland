@@ -1,38 +1,11 @@
+########GPA Robotics########
+Main drone knowledge archive
+Status: public
+Date: 2013.06.02
+#accessed: 4019
+#drones: 10298
+########GPA Robotics########
+
 *A robot will not harm authorized Government personnel but will terminate intruders with extreme prejudice.
 *A robot will obey the orders of authorized personnel except where such orders conflict with the Third Law.
 *A robot will guard its own existence with lethal antipersonnel weaponry, because a robot is bloody expensive.
-(absolutely not copied from wikipedia)
-
-
-~COM>log
-SYSTEM COM ~ 1200
-Unit	Message				Type
-003674	PUSHED_BY_ASSHOLE	0x0A-STATUS_UPDATE
-000259	TARGET_AQUIRED		0x0A-STATUS_UPDATE
-000259	REQ_WEPSAFE_DISABLE	0x02-REQUEST_LEVEL_0
-000001	REQ_AUTH(000259)	0xA1-REQUEST_GRANT
-000259	REQ_WEP_FREE		0x02-REQUEST_LEVEL_0
-000001	REQ_AUTH(000259)	0xA1-REQUEST_GRANT
-010026	LOG_DATA(128000)	0x05-DATA_SEND
-000001	LOC					0x0A-STATUS_UPDATE
-000001	REQ_STATUS(000259)	0x02-REQUEST_LEVEL_0
-000385	PROG_DATA(23000)	0x05-DATA_SEND
-000001	REQ_STATUS(000259)	0x02-REQUEST_LEVEL_1
-000001	REQ_STATUS(000259)	0x02-REQUEST_LEVEL_2
-000001	REQ_STATUS(000259)	0x02-REQUEST_LEVEL_3
-000343	LOG_DATA(512000)	0x05-DATA_SEND
-000001	UNITS_SUB(000259)	0x15-DATA_SEND_ALL
-000001	SYSTEM_UPDT			0x05-DATA_SEND
-=====COM logging disabled(000001)=====
-Time(hm:ss:ms): 1200:03:12
-User: .@main.hms_gotland(000001)
-======================================
-/log <-date>
-
-~COM>_
-
-
-
-
-
-

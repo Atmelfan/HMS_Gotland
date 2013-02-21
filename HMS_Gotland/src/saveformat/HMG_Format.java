@@ -11,15 +11,12 @@ import java.util.zip.GZIPOutputStream;
 
 public class HMG_Format
 {
-	public HMG_List header = new HMG_List();
-	public HMG_List root = new HMG_List();
+	public HMG_List header = new HMG_List("header");
+	public HMG_List root = new HMG_List("root");
 	
 	public static void main(String[] args) throws Exception
 	{
 		HMG_Format sf = new HMG_Format();
-		
-		sf.header.name = "header".toCharArray();
-		sf.root.name = "root".toCharArray();
 		
 		sf.header.setInteger("format_version", 1);
 		
@@ -29,8 +26,11 @@ public class HMG_Format
 		sf.header.setList(String.valueOf(t.name), t);
 		
 		
-		File f = new File("Resources/levels/test1.gpr");
-		f.createNewFile();
+		File f = new File("Resources/levels/test1.hms");
+		if(!f.exists())
+		{
+			f.createNewFile();
+		}
 		sf.write(f);
 		
 		HMG_Format sf1 = new HMG_Format();

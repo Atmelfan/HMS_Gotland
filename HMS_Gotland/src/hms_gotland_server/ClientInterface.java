@@ -3,11 +3,20 @@ package hms_gotland_server;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.Socket;
+import java.net.SocketAddress;
 import java.net.SocketException;
+import java.net.SocketOption;
+import java.nio.ByteBuffer;
+import java.nio.channels.Channels;
+import java.nio.channels.ReadableByteChannel;
+import java.nio.channels.Selector;
+import java.nio.channels.SocketChannel;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
+import java.util.Set;
 
 public class ClientInterface
 {
@@ -16,15 +25,15 @@ public class ClientInterface
 	public TCPRead clientReader;
 	public TCPWrite clientWriter;
 	public boolean terminate = false;
-	public Socket client;
+	public SocketChannel client;
 	
-	public ClientInterface(Socket client)
+	public ClientInterface(SocketChannel client2)
 	{
-		this.client = client;
+		this.client = client2;
 		try
 		{
-			clientReader = new TCPRead(new DataInputStream(client.getInputStream()));
-			clientWriter = new TCPWrite(new DataOutputStream(client.getOutputStream()));
+			clientReader = new TCPRead(new DataInputStream(client2.));
+			clientWriter = new TCPWrite(new DataOutputStream(client2.getOutputStream()));
 			clientReader.start();
 			clientWriter.start();
 		} catch (IOException e)

@@ -6,10 +6,15 @@ import java.io.IOException;
 
 public class HMG_Basic
 {
-	public char[] name;
+	public String name;
 	
 	public HMG_Basic()
 	{
+	}
+	
+	public HMG_Basic(String s)
+	{
+		name = s;
 	}
 	
 	public int getID()
@@ -19,20 +24,16 @@ public class HMG_Basic
 	
 	public void read(DataInputStream in) throws IOException
 	{
-		name = new char[in.readInt()];
-		for(int i = 0; i < name.length; i++)
-		{
-			name[i] = in.readChar();
-		}
+		byte[] buffer = new byte[in.readInt()];
+		in.read(buffer);
+		name = new String(buffer, "UTF-8");
 	}
 	
 	public void write(DataOutputStream out) throws IOException
 	{
-		out.writeInt(name.length);
-		for(int i = 0; i < name.length; i++)
-		{
-			out.writeChar(name[i]);
-		}
+		byte[] buffer = name.getBytes("UTF-8");
+		out.writeInt(buffer.length);
+		out.write(buffer);
 	}
 
 	/* (non-Javadoc)

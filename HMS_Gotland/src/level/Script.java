@@ -1,19 +1,29 @@
 package level;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 
 public class Script
 {
-	public String[] code;
+	private HashMap<String, Script_event> events = new HashMap<>();
 	
-	public void run()
+	public void runEvent(String event)
 	{
-		
+		Script_event sevent = events.get(event);
+		if(sevent != null)
+		{
+			sevent.run();
+		}
 	}
 	
 	private class Script_event
 	{
-		ArrayList<String> cmds;
+		public ArrayList<String> cmds;
+
+		public void run()
+		{
+			
+		}
 	}
 	
 }
