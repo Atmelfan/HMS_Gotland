@@ -1,5 +1,6 @@
 package model;
 
+
 import java.io.File;
 import java.io.FilenameFilter;
 
@@ -7,6 +8,7 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 
 import Util.GLUtil;
+
 
 public class AnimatedTexture
 {

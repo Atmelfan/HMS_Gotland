@@ -1,6 +1,7 @@
 package hms_gotland_client;
 
 import hms_gotland_server.HMS_Gotland_Server;
+import hms_gotland_server.Packet;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,6 +23,10 @@ import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GLContext;
 import org.lwjgl.util.glu.GLU;
+
+import com.esotericsoftware.kryonet.Client;
+import com.esotericsoftware.kryonet.Connection;
+import com.esotericsoftware.kryonet.Listener;
 
 
 import Util.GLUtil;
@@ -52,11 +57,11 @@ public class HMS_Gotland
 	private ClientLevel level;
 	public RenderEngine renderEngine;
 
-	private ServerInterface serverInterface;
+	private Client client;
 	private HMS_Gotland_Server server;
 	
 	private Wardos wardos;
-	private int texId;
+	private boolean running = true;
 	
 	public HMS_Gotland() 
 	{
@@ -68,6 +73,7 @@ public class HMS_Gotland
 	{
 		try
 		{
+			Thread.currentThread().setName("HMS_Gotland_Client");
 			renderEngine = new RenderEngine(this, WIDTH, HEIGHT);
 			System.out.println("==========================INFO==========================");
 			System.out.println("Operating system: " + System.getProperty("os.name"));
@@ -78,42 +84,42 @@ public class HMS_Gotland
 			System.out.println("LWJGL version: "  + Sys.getVersion());
 			System.out.println("==========================INFO==========================");
 			
-			server = new HMS_Gotland_Server(4321);
-			serverInterface = new ServerInterface(new Socket("127.0.0.1", 4321));
-			
+			server = new HMS_Gotland_Server(true, 4321, 4322);
+			server.start();
+			System.out.println("Started server...");
 			level = new ClientLevel(this);
-			GLUtil.cerror(getClass().getName() + " level load");
-			
-			setupTextures();
-			
 			wardos = new Wardos(this);
-			renderEngine.camera.owner = getPlayer();
+			renderEngine.camera.owner = level.player;
 			lastFrame = Sys.getTime();
+			client = new Client();
+			client.start();
+			Packet.registerPackets(client.getKryo());
+			client.addListener(listener);
 			
-			while (!Display.isCloseRequested()) 
+			client.connect(5000, "127.0.0.1", 4321, 4322);
+			
+			while (running) 
 			{
+				running = !Display.isCloseRequested();
 				updateTiming();
-				
-				serverInterface.tick();
 				level.tick();
+				
 				loopCycle();
 				
-				int i = GL11.glGetError();
-				if(i != GL11.GL_NO_ERROR)
-				{
-					System.out.println("##### GL error: " + GLU.gluErrorString(i) + " #####");
-				}
+				GLUtil.cerror("GL Error");
 				
 			}
 		} catch (Exception e)
 		{
 			System.err.println("Error: HMS_Gotland.run() - " + e.getMessage());
+			e.printStackTrace();
 		}finally
 		{
 			// Destroy OpenGL (Display)
 			System.out.println("Shutting down...");
 			destroyOpenGL();
-			serverInterface.terminate();
+			client.stop();
+			client.close();
 			
 			if(server != null)server.terminate();
 		}
@@ -130,14 +136,9 @@ public class HMS_Gotland
 			Display.setTitle(WINDOW_TITLE + fps);
 		}
 	}
-
-	private void setupTextures() {
-		texId = GLUtil.loadPNGTexture("Resources/assets/asset1.png", GL13.GL_TEXTURE0);
-	}
 	
 	private void logicCycle() 
 	{
-		float distance = 2f;
 		
 		while(Mouse.next())
 		{
@@ -157,10 +158,6 @@ public class HMS_Gotland
 			renderEngine.camera.pitch = Math.min(renderEngine.camera.pitch, 225);
 		}
 		
-		//Movement translation
-		float yaw = renderEngine.camera.yaw;
-		float xt = (float) (distance * Math.sin(Math.toRadians(yaw)));
-		float yt = (float) (distance * Math.sin(Math.toRadians(yaw)));
 		
 		while(Keyboard.next()) 
 		{			
@@ -179,27 +176,7 @@ public class HMS_Gotland
 				/*
 				 * Movement keys
 				 */
-			case Keyboard.KEY_W:
-				getPlayer().move(new Vector3f(xt, 0f, -yt));
-				break;
-			case Keyboard.KEY_S:
-				getPlayer().move(new Vector3f(-xt, 0f, yt));
-				break;
-			case Keyboard.KEY_A:
-				getPlayer().move(new Vector3f((float) (distance * Math.sin(Math.toRadians(yaw - 90))), 0f, 
-						(float) -(distance * Math.sin(Math.toRadians(yaw - 90)))));
-				break;
-			case Keyboard.KEY_D:
-				getPlayer().move(new Vector3f((float) -(distance * Math.sin(Math.toRadians(yaw + 90))), 0f, 
-						(float) (distance * Math.sin(Math.toRadians(yaw + 90)))));
-				break;
-				
-				/*
-				 * Character control keys
-				 */
-			case Keyboard.KEY_SPACE:
-				getPlayer().move(new Vector3f(0, distance, 0));
-				break;
+			
 			}
 			
 		}
@@ -209,9 +186,7 @@ public class HMS_Gotland
 	
 	private void renderCycle() {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
-		
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
 		
 		renderEngine.drawStarField();
 		level.draw();
@@ -227,28 +202,35 @@ public class HMS_Gotland
 		Display.update();
 	}
 	
-	private void destroyOpenGL() {	
-		// Delete the texture
-		GL11.glDeleteTextures(texId);
-		level.destroy();
+	private void destroyOpenGL()
+	{	
+		if(level != null) level.destroy();
 		
 		Display.destroy();
 	}
 
-	/**
-	 * @return the player
-	 */
-	public ClientPlayer getPlayer()
+	private Listener listener = new Listener()
 	{
-		return level.player;
-	}
 
-	/**
-	 * @param player the player to set
-	 */
-	public void setPlayer(ClientPlayer player)
-	{
-		level.player = player;
-	}
-
+		@Override
+		public void connected(Connection connection)
+		{
+			connection.sendTCP(new Packet.Login("tester"));
+			System.out.println("Logging in...");
+			super.connected(connection);
+		}
+		
+		@Override
+		public void received(Connection connection, Object object)
+		{
+			if(object instanceof Packet.Login)
+			{
+				System.out.println("Loading server level: " + ((Packet.Login)object).name);
+				level.setLevel(((Packet.Login)object).name);
+				GLUtil.cerror(getClass().getName() + " level load");
+			}
+			super.received(connection, object);
+		}
+		
+	};
 }

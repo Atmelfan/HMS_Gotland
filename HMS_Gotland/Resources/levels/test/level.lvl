@@ -5,19 +5,9 @@
 &obj ship.obj
 
 //Add a test entity
-&entity default 0 15 9 {
-	&model war.md2
-	&phys war.obj
-	&pos 0 20 0
-}
-
-&entity default -2.5 20 0
-
-//Compound entity
-&entity WAR {
-	&model war.md2
-	&ai attack
-	&health 20
+//&entity default {
+	&phys 1 1 1
+	&pos 0 0 0
 }
 
 #event player.death

@@ -14,6 +14,7 @@ import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
 
 import com.bulletphysics.collision.broadphase.AxisSweep3;
+import com.bulletphysics.collision.broadphase.AxisSweep3_32;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.collision.shapes.BoxShape;
@@ -90,7 +91,7 @@ public class Level
 		CollisionDispatcher dispatcher = new CollisionDispatcher(collisionConfiguration);
 		Vector3f worldAabbMin = new Vector3f(-10000, -10000, -10000);
 		Vector3f worldAabbMax = new Vector3f(10000, 10000, 10000);
-		AxisSweep3 overlappingPairCache = new AxisSweep3(worldAabbMin, worldAabbMax);
+		AxisSweep3_32 overlappingPairCache = new AxisSweep3_32(worldAabbMin, worldAabbMax);
 		SequentialImpulseConstraintSolver solver = new SequentialImpulseConstraintSolver();
 		
 		level = new DiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
@@ -135,9 +136,9 @@ public class Level
 				if(line.startsWith("&entity"))
 				{
 					String[] lines = line.split(" ");
-					if(lines.length > 4)
+					if(lines.length >= 3)
 					{
-						Entity e = EntityList.getEntity(lines[1], this, new Vector3f());
+						Entity e = EntityList.getEntity(lines[1], this);
 						if(e != null)
 						{
 							if(line.endsWith("{"))
@@ -152,15 +153,21 @@ public class Level
 									e.processTag(tag);
 								}
 							}
-							e.setPos(new Vector3f(Float.valueOf(lines[2]), Float.valueOf(lines[3]), Float.valueOf(lines[4])));
-							addEntity(e);
+							if(e.getBody() != null)
+							{
+								addEntity(e);
+							}else
+							{
+								System.err.println("No collision size in &entity command @line " + lineCount);
+							}
+							
 						}else
 						{
-							System.err.println("Invalid entity in level file");
+							System.err.println("Invalid entity in &entity command @line " + lineCount);
 						}
 					}else
 					{
-						System.err.println("Invalid &entity command @line" + lineCount);
+						System.err.println("Invalid &entity command @line " + lineCount);
 					}
 				}
 				if(line.startsWith("&player"))
@@ -175,7 +182,7 @@ public class Level
 						name = lines[1];
 					}else
 					{
-						throw new InvalidLevelException(file.getName(), "Invalid &name command", lineCount);
+						throw new LevelException(file.getName(), "Invalid &name command", lineCount);
 					}
 				}
 				if(line.startsWith("&obj"))
@@ -215,7 +222,7 @@ public class Level
 						model.mesh.clear();
 					}else
 					{
-						throw new InvalidLevelException(file.getName(), "Invalid &obj command", lineCount);
+						throw new LevelException(file.getName(), "Invalid &obj command", lineCount);
 					}
 				}
 			}
@@ -230,7 +237,7 @@ public class Level
 		{
 			System.out.println("Could not read level file!");
 			e.printStackTrace();
-		} catch (InvalidLevelException e)
+		} catch (LevelException e)
 		{
 			System.out.println("Invalid level file!");
 			e.printStackTrace();

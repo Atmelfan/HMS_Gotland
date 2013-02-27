@@ -1,6 +1,6 @@
 package level;
 
-public class InvalidLevelException extends Exception
+public class LevelException extends Exception
 {
 	private static final long serialVersionUID = -1517108261787652522L;
 	
@@ -8,7 +8,7 @@ public class InvalidLevelException extends Exception
 	public String level;
 	public int line = 0;
 	
-	public InvalidLevelException(String level, String s, int i)
+	public LevelException(String level, String s, int i)
 	{
 		message = s;
 		this.level = level;

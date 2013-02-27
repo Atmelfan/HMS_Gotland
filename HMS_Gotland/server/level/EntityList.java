@@ -11,13 +11,13 @@ public class EntityList
 {
 	private static HashMap<String, Class<? extends Entity>> entities = new HashMap<>();
 
-	public static Entity getEntity(String name, Level level, Vector3f pos)
+	public static Entity getEntity(String name, Level level)
 	{
 		Class<? extends Entity> clazz = entities.get(name);
 		
 		try
 		{
-			return clazz.getConstructor(Level.class, Vector3f.class).newInstance(new Object[]{level, pos});
+			return clazz.getConstructor(Level.class).newInstance(new Object[]{level});
 		} catch (InstantiationException | IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException | SecurityException e)
 		{
 			e.printStackTrace();
@@ -28,5 +28,6 @@ public class EntityList
 	static
 	{
 		entities.put("default", Entity.class);
+		entities.put("war", EntityWAR.class);
 	}
 }

@@ -23,11 +23,16 @@ import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
 public class GLUtil
 {
+	/**
+	 * Prints the OGL error in terminal.
+	 * OGL error(&error string) at &string
+	 * @param s
+	 */
 	public static void cerror(String s)
 	{
 		int i = GL11.glGetError();
 		if(i != GL11.GL_NO_ERROR)
-			System.err.println("OGL error(" + GLU.gluErrorString(i)+ ") at " + s);
+			System.err.println("OpenGL error(" + GLU.gluErrorString(i)+ ") at " + s);
 	}
 	
 	public static int getGLMaxVersion()

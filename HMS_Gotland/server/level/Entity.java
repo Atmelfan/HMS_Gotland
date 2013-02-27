@@ -1,5 +1,6 @@
 package level;
 
+import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
 
 
@@ -18,7 +19,9 @@ import hms_gotland_client.RenderEngine;
 
 public class Entity
 {
-	private Model model;//Model to draw
+	private static int entityIDs = 0;
+	public int entityID = entityIDs++;
+	
 	protected RigidBody body;//Physics body
 	protected EntityMotionState motionstate;
 	
@@ -28,34 +31,9 @@ public class Entity
 	private int health = 5;
 	private int t;
 
-	public Entity(Level level, Vector3f pos, float mass)
+	public Entity(Level level)
 	{
 		this.level = level;
-		setModel(level.modelpool.getModel(getEntityModelName()));
-		// Collision form
-		BoxShape shape = new BoxShape(new Vector3f(getModel().getXWidth(), getModel().getYHeight(), getModel().getZDepth()));
- 	    Vector3f localInertia = new Vector3f(0, 0, 0);
-	    shape.calculateLocalInertia(getMass(), localInertia);
-	    // Transform
-	    Transform startTransform = new Transform();
-	    startTransform.setIdentity();
-	    startTransform.origin.set(pos);
-	    // MotionState & body
-	    motionstate = new EntityMotionState(startTransform);
-	    RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, motionstate, shape, localInertia);
-	    body = new RigidBody(rbInfo);
-	    body.setRestitution(0.1f);
-	    body.setFriction(0.50f);
-	    body.setDamping(0f, 0f);
-	    
-	    //Associate this entity with the body and collisionshape
-	    body.setUserPointer(this);
-	    shape.setUserPointer(this);
-	}
-	
-	public Entity(Level level, Vector3f pos)
-	{
-		this(level, pos, getMass());
 	}
 	
 	public void collisionCallback(Entity entityCollided)
@@ -101,7 +79,7 @@ public class Entity
 		return 1f;
 	}
 	
-	protected String getEntityModelName()
+	public String getEntityModelName()
 	{
 		return "gpa_robotics_war.obj";
 	}
@@ -155,28 +133,38 @@ public class Entity
 		this.body = body;
 	}
 
-	/**
-	 * @return the model
-	 */
-	public Model getModel()
-	{
-		return model;
-	}
-
-	/**
-	 * @param model the model to set
-	 */
-	public void setModel(Model model)
-	{
-		this.model = model;
-	}
-
 	public void processTag(String tag)
 	{
 		String[] cmds = tag.split(" ");
-		if(cmds[0].equalsIgnoreCase("pos") && cmds.length > 3)
+		if(cmds[0].equalsIgnoreCase("&pos") && cmds.length > 3)
 		{
 			setPos(new Vector3f(Float.valueOf(cmds[1]), Float.valueOf(cmds[2]), Float.valueOf(cmds[3])));
 		}
+		if(cmds[0].equalsIgnoreCase("&phys") && cmds.length > 3)
+		{
+			BoxShape shape = new BoxShape(new Vector3f(Float.valueOf(cmds[1]), Float.valueOf(cmds[2]), Float.valueOf(cmds[3])));
+	 	    Vector3f localInertia = new Vector3f(0, 0, 0);
+		    shape.calculateLocalInertia(getMass(), localInertia);
+		    // Transform
+		    Transform startTransform = new Transform();
+		    startTransform.setIdentity();
+		    startTransform.origin.set(new Vector3f(0, 0, 0));
+		    // MotionState & body
+		    motionstate = new EntityMotionState(startTransform);
+		    RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(getMass(), motionstate, shape, localInertia);
+		    body = new RigidBody(rbInfo);
+		    body.setRestitution(0.1f);
+		    body.setFriction(0.50f);
+		    body.setDamping(0f, 0f);
+		    
+		    //Associate this entity with the body and collisionshape
+		    body.setUserPointer(this);
+		    shape.setUserPointer(this);
+		}
+	}
+
+	public Quat4f getAngle()
+	{
+		return getWorldTransform().getRotation(new Quat4f());
 	}	
 }
