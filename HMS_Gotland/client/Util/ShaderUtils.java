@@ -6,6 +6,7 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
+import java.util.HashMap;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.lwjgl.BufferUtils;
@@ -77,11 +78,20 @@ public class ShaderUtils
 	 *            The name of the variable.
 	 * @return The position of the variable.
 	 */
+	//private static HashMap<Integer, Integer> uniformPositionCache = new HashMap<>();
 	public static int getUniformVarPos(int program, String var)
 	{
 		int i = GL20.glGetUniformLocation(program, var);
-		// GLException.checkGLError();
 		return i;
+		//Ok, my caching == bad!
+		/*int integer = uniformPositionCache.get(var.hashCode() + program);
+		if(integer == 0)
+		{
+			integer = GL20.glGetUniformLocation(program, var);
+			uniformPositionCache.put(var.hashCode() + program, integer);
+			return integer;
+		}
+		return integer;*/
 	}
 
 	/**

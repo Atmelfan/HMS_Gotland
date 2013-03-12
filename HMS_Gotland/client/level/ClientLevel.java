@@ -1,4 +1,7 @@
-package hms_gotland_client;
+package level;
+
+import hms_gotland_client.HMS_Gotland;
+import hms_gotland_client.RenderEngine;
 
 import java.util.ArrayList;
 
@@ -29,7 +32,7 @@ public class ClientLevel
 	private DiscreteDynamicsWorld level;
 	private Model model;
 	private RigidBody levelbody;
-	RenderEngine renderEngine;
+	public RenderEngine renderEngine;
 	public ClientPlayer player;
 	private long lastTick;
 	
@@ -93,10 +96,6 @@ public class ClientLevel
 		if(lastTick - Sys.getTime() >= 16)
 		{
 			lastTick = Sys.getTime();
-			for (ClientEntity entity : entities)
-			{
-				//TODO
-			}
 			level.stepSimulation(1/60F);
 		}
 		
@@ -104,8 +103,7 @@ public class ClientLevel
 
 	public void destroy()
 	{
-		// TODO Auto-generated method stub
-		
+		level.destroy();
 	}
 
 }

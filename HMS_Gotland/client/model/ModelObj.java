@@ -93,9 +93,9 @@ public class ModelObj extends Model
 		// Create a new shader program that links both shaders
 		shader_id = ShaderUtils.makeProgram(vsId, fsId);
 		
-		GL20.glBindAttribLocation(shader_id, RenderEngine.VERTEX_ATTRIB_POINTER, "in_Position");
-		GL20.glBindAttribLocation(shader_id, RenderEngine.TEXTURE_ATTRIB_POINTER, "in_TextureCoord");
-		GL20.glBindAttribLocation(shader_id, RenderEngine.NORMAL_ATTRIB_POINTER, "in_Normal");
+		GL20.glBindAttribLocation(shader_id, 0, "in_Position");
+		GL20.glBindAttribLocation(shader_id, 1, "in_TextureCoord");
+		GL20.glBindAttribLocation(shader_id, 2, "in_Normal");
 		
 		GL20.glValidateProgram(shader_id);
 		GLUtil.cerror(getClass().getName() + " setupShader");
@@ -326,11 +326,11 @@ public class ModelObj extends Model
 			{
 				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesFloatBuffer, GL15.GL_STATIC_DRAW);
 				// Put the position coordinates in attribute list 0
-				GL20.glVertexAttribPointer(RenderEngine.VERTEX_ATTRIB_POINTER, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
+				GL20.glVertexAttribPointer(0, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
 				// Put the color components in attribute list 1
-				GL20.glVertexAttribPointer(RenderEngine.TEXTURE_ATTRIB_POINTER, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
+				GL20.glVertexAttribPointer(1, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
 				// Put the texture coordinates in attribute list 2
-				GL20.glVertexAttribPointer(RenderEngine.NORMAL_ATTRIB_POINTER, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
+				GL20.glVertexAttribPointer(2, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
 			}
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 		}

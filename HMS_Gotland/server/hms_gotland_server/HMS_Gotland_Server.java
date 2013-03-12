@@ -36,7 +36,7 @@ public class HMS_Gotland_Server extends Thread
 	}
 	
 	/**
-	 * Starts a server on TCP port and UDP port+1
+	 * Starts a server on TCP port and UDP port
 	 * @param port
 	 */
 	public HMS_Gotland_Server(boolean integrated, int tcpport, int udpport)
@@ -60,15 +60,12 @@ public class HMS_Gotland_Server extends Thread
 		{
 			System.err.println("Error: HMS_Gotland_Server.HMS_Gotland_Server() - " + e.getMessage());
 		}
-		
+		kryoServer.start();
 		System.out.println((integrated ? "Server: " : "") + "Connected to port, UDP: " + udpport + ", TCP: " + tcpport);
-		
 	}
 
 	public void run()
 	{
-		kryoServer.start();
-		
 		try
 		{
 			while(running)

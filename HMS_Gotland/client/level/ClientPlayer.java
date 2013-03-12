@@ -1,6 +1,8 @@
-package hms_gotland_client;
+package level;
+
 
 import javax.vecmath.Vector3f;
+
 
 public class ClientPlayer extends ClientEntity
 {

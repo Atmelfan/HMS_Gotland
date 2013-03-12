@@ -1,5 +1,7 @@
-package hms_gotland_client;
+package level;
 
+
+import hms_gotland_client.RenderEngine;
 
 import javax.vecmath.Vector3f;
 

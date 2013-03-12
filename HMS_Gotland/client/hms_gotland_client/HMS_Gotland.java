@@ -10,6 +10,7 @@ import java.net.UnknownHostException;
 
 import javax.vecmath.Vector3f;
 
+import level.ClientLevel;
 import level.EntityList;
 import level.EntityPlayer;
 import level.Level;
@@ -62,6 +63,8 @@ public class HMS_Gotland
 	
 	private Wardos wardos;
 	private boolean running = true;
+	private boolean playing;
+	private long lastTick;
 	
 	public HMS_Gotland() 
 	{
@@ -74,57 +77,105 @@ public class HMS_Gotland
 		try
 		{
 			Thread.currentThread().setName("HMS_Gotland_Client");
-			renderEngine = new RenderEngine(this, WIDTH, HEIGHT);
-			System.out.println("==========================INFO==========================");
-			System.out.println("Operating system: " + System.getProperty("os.name"));
-			System.out.println("System architecture: "  + System.getProperty("os.arch"));
-			System.out.println("GPU vendor: " + GL11.glGetString(GL11.GL_VENDOR));
-			System.out.println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION));
-			System.out.println("Shader version: " + GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION));
-			System.out.println("LWJGL version: "  + Sys.getVersion());
-			System.out.println("==========================INFO==========================");
-			
-			server = new HMS_Gotland_Server(true, 4321, 4322);
-			server.start();
-			System.out.println("Started server...");
-			level = new ClientLevel(this);
+			printInfo();
 			wardos = new Wardos(this);
-			renderEngine.camera.owner = level.player;
 			lastFrame = Sys.getTime();
-			client = new Client();
-			client.start();
-			Packet.registerPackets(client.getKryo());
-			client.addListener(listener);
-			
-			client.connect(5000, "127.0.0.1", 4321, 4322);
 			
 			while (running) 
 			{
 				running = !Display.isCloseRequested();
+				
 				updateTiming();
-				level.tick();
-				
-				loopCycle();
-				
+				input();
+				render();
+				Display.update();
 				GLUtil.cerror("GL Error");
-				
 			}
 		} catch (Exception e)
 		{
 			System.err.println("Error: HMS_Gotland.run() - " + e.getMessage());
 			e.printStackTrace();
+			Sys.alert("HMS_Gotland error", "Unexpected error:\n" + e.getLocalizedMessage());
 		}finally
 		{
-			// Destroy OpenGL (Display)
 			System.out.println("Shutting down...");
+			quitGame();
 			destroyOpenGL();
-			client.stop();
-			client.close();
-			
-			if(server != null)server.terminate();
 		}
 	}
 
+	private void tick()
+	{
+		updateGame();
+		renderEngine.camera.yaw += 0.05f;
+		renderEngine.camera.pitch += 0.03f;
+	}
+	
+
+	private void updateGame()
+	{
+		if(level != null)
+		{
+			level.tick();
+		}
+	}
+	
+	public void startGame(boolean singleplayer, String ip, int tcp, int udp) throws IOException
+	{
+		if(singleplayer)
+		{
+			//Create new level
+			level = new ClientLevel(this);
+			renderEngine.camera.owner = level.player;
+			//Create server
+			server = new HMS_Gotland_Server(true, tcp, udp);
+			server.start();
+			//Create server connection
+			client = new Client();
+			client.addListener(listener);
+			Packet.registerPackets(client.getKryo());
+			client.start();
+			//Connect
+			client.connect(5000, ip, tcp, udp);
+		}else
+		{
+			//Create new level
+			level = new ClientLevel(this);
+			renderEngine.camera.owner = level.player;
+			//Create server connection
+			client = new Client();
+			client.addListener(listener);
+			Packet.registerPackets(client.getKryo());
+			client.start();
+			//Connect
+			client.connect(5000, ip, tcp, udp);
+		}
+	}
+	
+	public void quitGame()
+	{
+		renderEngine.camera.owner = null;
+		if(level != null)
+		{
+			//Stop and clean up if available
+			level.destroy();
+			level = null;
+		}
+		if(server != null)
+		{
+			//Stop and clean up if available
+			server.terminate();
+			server = null;
+		}
+		if(client != null)
+		{
+			//Stop and clean up if available
+			client.stop();
+			client.close();
+			client = null;
+		}
+	}
+	
 	private void updateTiming()
 	{
 		currentfps++;
@@ -135,9 +186,14 @@ public class HMS_Gotland
 			currentfps = 0;
 			Display.setTitle(WINDOW_TITLE + fps);
 		}
+		if(Sys.getTime() - lastTick >= 16)
+		{
+			lastTick = Sys.getTime();
+			tick();
+		}
 	}
-	
-	private void logicCycle() 
+
+	private void input() 
 	{
 		
 		while(Mouse.next())
@@ -184,33 +240,32 @@ public class HMS_Gotland
 		renderEngine.camera.update();
 	}
 	
-	private void renderCycle() {
+	private void render() 
+	{
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		
 		renderEngine.drawStarField();
-		level.draw();
 		wardos.draw();
-	}
-	
-	private void loopCycle() 
-	{
-		// Update logic
-		logicCycle();
-		// Update rendered frame
-		renderCycle();
-		Display.update();
+		if(level != null)
+		{
+			level.draw();
+		}
 	}
 	
 	private void destroyOpenGL()
-	{	
-		if(level != null) level.destroy();
-		
+	{
 		Display.destroy();
 	}
 
 	private Listener listener = new Listener()
 	{
+		@Override
+		public void disconnected(Connection connection)
+		{
+			quitGame();
+			super.disconnected(connection);
+		}
 
 		@Override
 		public void connected(Connection connection)
@@ -233,4 +288,17 @@ public class HMS_Gotland
 		}
 		
 	};
+	
+	private void printInfo()
+	{
+		renderEngine = new RenderEngine(this, WIDTH, HEIGHT);
+		System.out.println("==========================INFO==========================");
+		System.out.println("Operating system: " + System.getProperty("os.name"));
+		System.out.println("System architecture: "  + System.getProperty("os.arch"));
+		System.out.println("GPU vendor: " + GL11.glGetString(GL11.GL_VENDOR));
+		System.out.println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION));
+		System.out.println("Shader version: " + GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION));
+		System.out.println("LWJGL version: "  + Sys.getVersion());
+		System.out.println("==========================INFO==========================");
+	}
 }

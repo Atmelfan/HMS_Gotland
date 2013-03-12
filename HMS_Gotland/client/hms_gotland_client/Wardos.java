@@ -30,9 +30,6 @@ public class Wardos
 	private int vbocId;
 	private FontRenderer font;
 	private HMS_Gotland game;
-	private int fboID;
-	int texID;
-	private int rboID;
 	
 	public Wardos(HMS_Gotland game)
 	{
@@ -41,35 +38,8 @@ public class Wardos
 		this.game = game;
 		setupShader();
 		setupQuad();
-		gui_id = GLUtil.loadPNGTexture("Resources/assets/WardosScreen.png", GL13.GL_TEXTURE0);
+		gui_id = GLUtil.loadPNGTexture("Resources/assets/WardosScreenCracked.png", GL13.GL_TEXTURE0);
 		font = new FontRenderer("Agency FB", 60);
-	}
-	
-	public void setupFBO()
-	{
-		fboID = GL30.glGenFramebuffers();
-		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fboID);
-		{
-			texID = GL11.glGenTextures();
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, texID);
-			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, 1024, 512, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, 0);
-			// Poor filtering. Needed !
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
-			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
-			
-			rboID = GL30.glGenRenderbuffers();
-			GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, rboID);
-			{
-				GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, 1024, 512);
-				GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, rboID);
-				
-				GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0,GL11.GL_TEXTURE_2D, texID, 0);
-				
-				GL20.glDrawBuffers(GL30.GL_COLOR_ATTACHMENT0);
-			}
-			GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, 0);
-		}
-		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
 	}
 	
 	public void setupShader()
@@ -90,6 +60,7 @@ public class Wardos
 	public void draw()
 	{
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
+		GL11.glDisable(GL11.GL_CULL_FACE);
 		ShaderUtils.useProgram(shader_id);
 		{
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, gui_id);
@@ -117,6 +88,7 @@ public class Wardos
 		font.drawString(4, 6, "Coord: N/A", 0f, 0.5f, 0f, 175/255f);
 		//font.drawStringRightAdjusted(1024, 0, "Coord: " + game.getPlayer().getPos().toString(), 0f, 0.5f, 0f, 175/255f);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
+		GL11.glEnable(GL11.GL_CULL_FACE);
 	}
 
 	public void setupQuad() 

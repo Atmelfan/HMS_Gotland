@@ -6,6 +6,7 @@ package hms_gotland_client;
 
 import java.nio.FloatBuffer;
 
+import level.ClientPlayer;
 import level.Entity;
 
 import org.lwjgl.BufferUtils;
@@ -27,7 +28,7 @@ public class Camera
 	
 	public ClientPlayer owner;
 	
-	public Vector3f pos = new Vector3f();
+	public Vector3f pos = new Vector3f(0, 0, 0);
 	
 	private Matrix4f projectionMatrix;// view matrix
 	private Matrix4f viewMatrix;// projection matrix
@@ -51,7 +52,6 @@ public class Camera
 		{
 			viewMatrix.translate(new Vector3f(0F, 0F, -thirdPersonRadius));
 		}
-		viewMatrix.rotate((float) Math.toRadians(180), new Vector3f(0, 0, 1));
 		viewMatrix.rotate((float) Math.toRadians(pitch), new Vector3f(1, 0, 0));
 		viewMatrix.rotate((float) Math.toRadians(yaw), new Vector3f(0, 1, 0));
 		

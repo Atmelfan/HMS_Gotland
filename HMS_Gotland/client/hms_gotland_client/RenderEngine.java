@@ -22,22 +22,13 @@ public class RenderEngine
 
 	public Camera camera;
 	
-	public static int  VERTEX_ATTRIB_POINTER = 0;
-	public static int TEXTURE_ATTRIB_POINTER = 1;
-	public static int  NORMAL_ATTRIB_POINTER = 2;
-	
 	public ModelPool modelpool = new ModelPool();
 
 	private int starVao_id;
-
 	private int vbovid;
-
 	private int vbocid;
-
 	private int starfield_vsId;
-
 	private int starfield_fsId;
-
 	private int starfield_shader_id;
 
 	private HMS_Gotland game;
