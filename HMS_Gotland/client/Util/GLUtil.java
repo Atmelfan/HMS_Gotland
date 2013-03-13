@@ -23,6 +23,12 @@ import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
 public class GLUtil
 {
+	private static final boolean DEBUG = Boolean.valueOf(System.getProperty("hms_gotland.debug"));
+			
+	static
+	{
+		if(DEBUG) System.out.println("###Debug enabled###");
+	}
 	/**
 	 * Prints the OGL error in terminal.
 	 * OGL error(&error string) at &string
@@ -30,9 +36,12 @@ public class GLUtil
 	 */
 	public static void cerror(String s)
 	{
-		int i = GL11.glGetError();
-		if(i != GL11.GL_NO_ERROR)
-			System.err.println("OpenGL error(" + GLU.gluErrorString(i)+ ") at " + s);
+		if(DEBUG)
+		{
+			int i = GL11.glGetError();
+			if(i != GL11.GL_NO_ERROR)
+				System.err.println("OpenGL error(" + GLU.gluErrorString(i)+ ") at " + s);
+		}
 	}
 	
 	public static int getGLMaxVersion()
@@ -56,18 +65,18 @@ public class GLUtil
 	 */
 	public static int getMaxSamplings()
 	{
+		int i = 0;
 		try
 		{
 			Pbuffer tmp = new Pbuffer(64, 64, new PixelFormat(), null);
 			tmp.makeCurrent();
-			int i = GL11.glGetInteger(GL30.GL_MAX_SAMPLES);
+			i = GL11.glGetInteger(GL30.GL_MAX_SAMPLES);
 			tmp.destroy();
-			return i;
 		} catch (LWJGLException e1)
 		{
 			e1.printStackTrace();
 		}
-		return 0;
+		return i;
 	}
 	
 	/**
@@ -167,18 +176,17 @@ public class GLUtil
 					* decoder.getHeight());
 			decoder.decode(buf, decoder.getWidth() * 4, Format.RGBA);
 			buf.flip();
-
 			in.close();
-			texId = GL11.glGenTextures();
+			
 		} catch (IOException e)
 		{
 			System.err.println("Failed to load texture: " + e.getMessage());
-			return 0;
+			return -1;
 		}
-
 		// Create a new texture object in memory and bind it
 		
 		GL13.glActiveTexture(textureUnit);
+		texId = GL11.glGenTextures();
 		GL11.glBindTexture(GL11.GL_TEXTURE_2D, texId);
 
 		// All RGB bytes are aligned to each other and each component is 1 byte
@@ -187,15 +195,15 @@ public class GLUtil
 		// Upload the texture data and generate mip maps (for scaling)
 		GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGBA, tWidth, tHeight, 0, GL11.GL_RGBA, GL11.GL_UNSIGNED_BYTE, buf);
 		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
-
+		GLUtil.cerror("GLUtil.loadPNGTexture1-" + filename);
 		// Setup the ST coordinate system
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
 		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
-
+		GLUtil.cerror("GLUtil.loadPNGTexture2-" + filename);
 		// Setup what to do when the texture has to be scaled
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST_MIPMAP_LINEAR);
-		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST_MIPMAP_LINEAR);
-
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR_MIPMAP_LINEAR);
+		GLUtil.cerror("GLUtil.loadPNGTexture3-" + filename);
 		return texId;
 	}
 	

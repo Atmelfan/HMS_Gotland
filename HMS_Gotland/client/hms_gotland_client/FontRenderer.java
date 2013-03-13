@@ -57,6 +57,7 @@ public class FontRenderer
 		GL20.glBindAttribLocation(shader_id, 1, "in_TextureCoord");
 		
 		GL20.glValidateProgram(shader_id);
+		GLUtil.cerror("FontRenderer.setupShader-shader setup");
 	}
 	
 	public void setup(String font_name, int size)
@@ -67,10 +68,8 @@ public class FontRenderer
 		g.setFont(font);
 		g.setBackground(new Color(0, 0, 0, 0));
 		g.setColor(Color.WHITE);
-		g.setRenderingHint(
-        RenderingHints.KEY_TEXT_ANTIALIASING,
-        RenderingHints.VALUE_TEXT_ANTIALIAS_ON
-        );
+		g.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_GASP);
+		if(!g.getFontRenderContext().isAntiAliased()) System.err.println("Fontrenderer could not be antialiased!");
 		font_height = size;
 		character_textures = new int['~' - ' '];
 		character_width = g.getFontMetrics().getWidths();
@@ -107,6 +106,7 @@ public class FontRenderer
 	        buffer.flip(); //FOR THE LOVE OF GOD DO NOT FORGET THIS
 
 	  		//Generate texture
+	        GLUtil.cerror("FontRenderer.setupt-" + (character - ' '));
 			GL13.glActiveTexture(GL13.GL_TEXTURE0);
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, character_textures[character - ' ']);
 			// All RGB bytes are aligned to each other and each component is 1 byte
@@ -122,7 +122,9 @@ public class FontRenderer
 			// Setup what to do when the texture has to be scaled
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
 			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+			GLUtil.cerror("FontRenderer.setup-" + (character - ' '));
 		}
+		GLUtil.cerror("FontRenderer.setup-font texture setup");
 	}
 	
 	public void setupQuad() 
@@ -181,6 +183,7 @@ public class FontRenderer
 		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, GLUtil.buffer(indices), GL15.GL_STATIC_DRAW);
 		// Deselect (bind to 0) the VBO
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);		
+		GLUtil.cerror("FontRenderer.setupQuad-VBO setup");
 	}
 	
 	public float point(int coord, int size)

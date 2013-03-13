@@ -22,6 +22,7 @@ import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL20;
+import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.GLContext;
 import org.lwjgl.util.glu.GLU;
 
@@ -89,7 +90,7 @@ public class HMS_Gotland
 				input();
 				render();
 				Display.update();
-				GLUtil.cerror("GL Error");
+				GLUtil.cerror("HMS_Gotland.run-main loop");
 			}
 		} catch (Exception e)
 		{
@@ -299,6 +300,7 @@ public class HMS_Gotland
 		System.out.println("OpenGL version: " + GL11.glGetString(GL11.GL_VERSION));
 		System.out.println("Shader version: " + GL11.glGetString(GL20.GL_SHADING_LANGUAGE_VERSION));
 		System.out.println("LWJGL version: "  + Sys.getVersion());
+		System.out.println("MSAA Antialias: " + GL11.glGetInteger(GL30.GL_MAX_SAMPLES) + "x");
 		System.out.println("==========================INFO==========================");
 	}
 }

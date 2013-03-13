@@ -1,17 +1,10 @@
 package hms_gotland_client;
 
-import java.nio.ByteBuffer;
-import java.nio.FloatBuffer;
-
-import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
-import org.lwjgl.opengl.GL14;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
-import org.lwjgl.opengl.GL31;
-import org.lwjgl.util.glu.GLU;
 
 import Util.GLUtil;
 import Util.ShaderUtils;
@@ -40,6 +33,7 @@ public class Wardos
 		setupQuad();
 		gui_id = GLUtil.loadPNGTexture("Resources/assets/WardosScreenCracked.png", GL13.GL_TEXTURE0);
 		font = new FontRenderer("Agency FB", 60);
+		GLUtil.cerror("Wardos.Wardos-HUD init");
 	}
 	
 	public void setupShader()
@@ -55,6 +49,8 @@ public class Wardos
 		GL20.glBindAttribLocation(shader_id, 1, "in_TextureCoord");
 		
 		GL20.glValidateProgram(shader_id);
+		
+		GLUtil.cerror("HUD shader init");
 	}
 	
 	public void draw()
@@ -93,7 +89,7 @@ public class Wardos
 
 	public void setupQuad() 
 	{		
-		// Vertices, the order is not important.
+		//Vertices, the order is not important.
 		float[] vertices = {
 				-1f, 1f, 0f,	// Left top			ID: 0
 				-1f, -1f, 0f,	// Left bottom		ID: 1
@@ -101,7 +97,7 @@ public class Wardos
 				1f, 1f, 0f		// Right left		ID: 3
 		};
 		
-		// Vertices, the order is not important.
+		//Vertices, the order is not important.
 		float[] texture = {
 				0, 0,	// Left top			ID: 0
 				0, 1,	// Left bottom		ID: 1
@@ -109,7 +105,7 @@ public class Wardos
 				1, 0,	// Right left		ID: 3
 		};
 		
-		// OpenGL expects to draw vertices in counter clockwise order by default
+		//OpenGL expects to draw vertices in counter clockwise order by default
 		byte[] indices = {
 				// Left bottom triangle
 				0, 1, 2,
@@ -146,7 +142,8 @@ public class Wardos
 		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
 		GL15.glBufferData(GL15.GL_ELEMENT_ARRAY_BUFFER, GLUtil.buffer(indices), GL15.GL_STATIC_DRAW);
 		// Deselect (bind to 0) the VBO
-		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);		
+		GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);	
+		GLUtil.cerror("Wardos.setupQuad");
 	}
 	
 	public void tick()
