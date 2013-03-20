@@ -8,17 +8,23 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 
 import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
+
+import org.lwjgl.BufferUtils;
 
 import com.bulletphysics.collision.broadphase.AxisSweep3;
 import com.bulletphysics.collision.broadphase.AxisSweep3_32;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.collision.shapes.BoxShape;
+import com.bulletphysics.collision.shapes.BvhTriangleMeshShape;
 import com.bulletphysics.collision.shapes.CollisionShape;
+import com.bulletphysics.collision.shapes.IndexedMesh;
+import com.bulletphysics.collision.shapes.TriangleIndexVertexArray;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.DynamicsWorld;
 import com.bulletphysics.dynamics.RigidBody;
@@ -44,7 +50,7 @@ public class Level
 	public String name;
 	
 	//Physics
-	public LevelMesh model;
+	public LevelCollisionShape model;
 	public RigidBody levelbody;
 	public DynamicsWorld level;
 	public ModelPool modelpool;
@@ -60,7 +66,10 @@ public class Level
 		//Read level save file
 		levelFile = new File(DEFAULT_LEVEL_PATH + name);
 		parseLevelFile(levelFile);
-		
+	}
+	
+	public void saveToDisk()
+	{
 		
 	}
 	
@@ -190,29 +199,35 @@ public class Level
 					String[] lines = line.split(" ");
 					if(lines.length > 1)
 					{
-						model = new LevelMesh(new File(file, lines[1]), false);
+						model = new LevelCollisionShape(new File(file, lines[1]), false);
 						
-						//Get vertex data
-						Vector3f[] data = model.mesh.toArray(new Vector3f[0]);
-						
-						//Assemble vertex data into hull vectors
-						ObjectArrayList<Vector3f> vertes = new ObjectArrayList<Vector3f>();
-						
-						for (int i = 0; i < data.length; i++)
-						{
-							vertes.add(data[i]);
-						}
 						//Create body
-						//TriangleIndexVertexArray array = new TriangleIndexVertexArray(model.numpolygons(), );
+						ArrayList<Vector3f> mesh = model.mesh;
+						ByteBuffer index = BufferUtils.createByteBuffer(mesh.size() * 3 * 4);
+						for (int i = 0; i < mesh.size() * 3; i++)
+						{
+							index.putInt(i);
+						}
 						
-						CollisionShape groundShape = new BoxShape(new Vector3f(model.getXWidth(), model.getYHeight(), model.getZDepth()));
+						ByteBuffer geom = BufferUtils.createByteBuffer(mesh.size() * 3 * 4);
+						for (int i = 0; i < mesh.size(); i++)
+						{
+							geom.putFloat(mesh.get(i).x);
+							geom.putFloat(mesh.get(i).y);
+							geom.putFloat(mesh.get(i).z);
+						}
+						index.rewind();
+						geom.rewind();
+						TriangleIndexVertexArray trimesh = new TriangleIndexVertexArray(model.numpolygons(), index, 3 * 4, model.numpolygons(), geom, 3 * 4);
+						BvhTriangleMeshShape trimeshshape = new BvhTriangleMeshShape(trimesh,true);
+						
 						Transform groundTransform = new Transform();
 						groundTransform.setIdentity();
 						groundTransform.origin.set(new Vector3f(0F, 0F, 0F));
 						float mass = 0F;
 						Vector3f localInertia = new Vector3f(0F, 0F, 0F);
 					    DefaultMotionState myMotionState = new DefaultMotionState(groundTransform);
-						RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, myMotionState, groundShape, localInertia);
+						RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, myMotionState, trimeshshape, localInertia);
 						levelbody = new RigidBody(rbInfo);
 						levelbody.setRestitution(0.1f);
 						levelbody.setFriction(0.50f);

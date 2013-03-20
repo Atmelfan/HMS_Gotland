@@ -40,7 +40,7 @@ public class ClientLevel
 	{
 		renderEngine = gotland.renderEngine;
 		setupWorld();
-		player = new ClientPlayer(this, "war.md2", 0);
+		player = new ClientPlayer(this, "lara/Lara_Croft.obj", 0);
 		addEntity(player);
 		
 	}
@@ -93,12 +93,7 @@ public class ClientLevel
 	
 	public void tick()
 	{
-		if(lastTick - Sys.getTime() >= 16)
-		{
-			lastTick = Sys.getTime();
-			level.stepSimulation(1/60F);
-		}
-		
+		level.stepSimulation(1/60F);
 	}
 
 	public void destroy()

@@ -64,7 +64,7 @@ public class HMS_Gotland
 	
 	private Wardos wardos;
 	private boolean running = true;
-	private boolean playing;
+	public boolean playing;
 	private long lastTick;
 	
 	public HMS_Gotland() 
@@ -107,22 +107,28 @@ public class HMS_Gotland
 
 	private void tick()
 	{
-		updateGame();
-		renderEngine.camera.yaw += 0.05f;
-		renderEngine.camera.pitch += 0.03f;
+		if(!updateGame())
+		{
+			renderEngine.camera.yaw += 0.05f;
+			renderEngine.camera.pitch += 0.03f;
+		}
+		
 	}
 	
 
-	private void updateGame()
+	private boolean updateGame()
 	{
 		if(level != null)
 		{
 			level.tick();
+			return true;
 		}
+		return false;
 	}
 	
 	public void startGame(boolean singleplayer, String ip, int tcp, int udp) throws IOException
 	{
+		playing = true;
 		if(singleplayer)
 		{
 			//Create new level
@@ -138,6 +144,7 @@ public class HMS_Gotland
 			client.start();
 			//Connect
 			client.connect(5000, ip, tcp, udp);
+			
 		}else
 		{
 			//Create new level
@@ -155,6 +162,7 @@ public class HMS_Gotland
 	
 	public void quitGame()
 	{
+		playing = false;
 		renderEngine.camera.owner = null;
 		if(level != null)
 		{
@@ -212,7 +220,7 @@ public class HMS_Gotland
 			renderEngine.camera.yaw -= Mouse.getDX();
 			renderEngine.camera.pitch -= Mouse.getDY();
 			renderEngine.camera.pitch = Math.max(renderEngine.camera.pitch, 45);
-			renderEngine.camera.pitch = Math.min(renderEngine.camera.pitch, 225);
+			renderEngine.camera.pitch = Math.min(renderEngine.camera.pitch, 315);
 		}
 		
 		
@@ -229,6 +237,15 @@ public class HMS_Gotland
 				 */
 			case Keyboard.KEY_ESCAPE:
 				Mouse.setGrabbed(false);
+				break;
+			case Keyboard.KEY_F1:
+				try
+				{
+					startGame(true, "127.0.0.1", 4321, 4322);
+				} catch (IOException e)
+				{
+					System.err.println("Error: HMS_Gotland.input() - " + e.getMessage());
+				}
 				break;
 				/*
 				 * Movement keys
@@ -247,11 +264,11 @@ public class HMS_Gotland
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		
 		renderEngine.drawStarField();
-		wardos.draw();
 		if(level != null)
 		{
 			level.draw();
 		}
+		wardos.draw();
 	}
 	
 	private void destroyOpenGL()
@@ -264,7 +281,7 @@ public class HMS_Gotland
 		@Override
 		public void disconnected(Connection connection)
 		{
-			quitGame();
+			//quitGame();
 			super.disconnected(connection);
 		}
 

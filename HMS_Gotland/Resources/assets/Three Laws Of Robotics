@@ -1,11 +1,16 @@
-########GPA Robotics########
-Main drone knowledge archive
-Status: public
-Date: 2013.06.02
-#accessed: 4019
-#drones: 10298
-########GPA Robotics########
+//########GPA Robotics########
+//Main drone knowledge archive
+//Status: public
+//Date: 2013.06.02
+//#accessed: 4019
+//#drones: 10298
+//#TODO make obligatory
+//########GPA Robotics########
+#include "hlvl/reading.pkg"
 
+.ann
+
+.dat
 *A robot will not harm authorized Government personnel but will terminate intruders with extreme prejudice.
 *A robot will obey the orders of authorized personnel except where such orders conflict with the Third Law.
 *A robot will guard its own existence with lethal antipersonnel weaponry, because a robot is bloody expensive.

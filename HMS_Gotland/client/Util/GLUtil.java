@@ -181,7 +181,7 @@ public class GLUtil
 		} catch (IOException e)
 		{
 			System.err.println("Failed to load texture: " + e.getMessage());
-			return -1;
+			return 0;
 		}
 		// Create a new texture object in memory and bind it
 		

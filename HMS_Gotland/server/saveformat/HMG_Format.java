@@ -11,8 +11,8 @@ import java.util.zip.GZIPOutputStream;
 
 public class HMG_Format
 {
-	public HMG_List header = new HMG_List("header");
-	public HMG_List root = new HMG_List("root");
+	public HMG_Compound header = new HMG_Compound("header");
+	public HMG_Compound root = new HMG_Compound("root");
 	
 	public static void main(String[] args) throws Exception
 	{
@@ -20,10 +20,10 @@ public class HMG_Format
 		
 		sf.header.setInteger("format_version", 1);
 		
-		HMG_List t = new HMG_List("info");
+		HMG_Compound t = new HMG_Compound("info");
 		t.setString("vendor", "gpa_robotics");
 		t.setInteger("protocol_version", 0);
-		sf.header.setList(String.valueOf(t.name), t);
+		sf.header.setList(t.name, t);
 		
 		
 		File f = new File("Resources/levels/test1.hms");
@@ -72,10 +72,10 @@ public class HMG_Format
 	
 	static
 	{
-		tags.put(1, HMG_Basic.class);
 		tags.put(1, HMG_Integer.class);
 		tags.put(2, HMG_Float.class);
 		tags.put(3, HMG_String.class);
-		tags.put(4, HMG_List.class);
+		tags.put(4, HMG_Compound.class);
+		tags.put(5, HMG_List.class);
 	}
 }

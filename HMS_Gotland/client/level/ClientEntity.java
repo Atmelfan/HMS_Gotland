@@ -57,6 +57,12 @@ public class ClientEntity
 	public void draw(RenderEngine engine)
 	{
 		motionstate.getWorldTransform().getOpenGLMatrix(modelMatrix);
-		model.drawCEL(frame, engine.getViewProjectionMatrix(), modelMatrix, engine);
+		model.draw(frame, engine.getViewProjectionMatrix(), modelMatrix, engine);
+	}
+	
+	public float[] getOpenGLMatrix()
+	{
+		motionstate.getWorldTransform().getOpenGLMatrix(modelMatrix);
+		return modelMatrix;
 	}
 }

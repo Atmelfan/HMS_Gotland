@@ -92,8 +92,8 @@ public class RenderEngine
 		{
 			float yaw = 	(float) (Math.random() * 2 * Math.PI);
 			float pitch = 	(float) (Math.random() * 2 * Math.PI);
-			starVertices[i + 0] = (float) (distance * Math.cos(yaw));
-			starVertices[i + 1] = (float) (distance * Math.sin(yaw));
+			starVertices[i + 0] = (float) (distance * Math.cos(yaw) * Math.sin(pitch));
+			starVertices[i + 1] = (float) (distance * Math.sin(yaw) * Math.sin(pitch));
 			starVertices[i + 2] = (float) (distance * Math.cos(pitch));
 			
 			starColors[i + 0] = (float) Math.random() + 0.8f;

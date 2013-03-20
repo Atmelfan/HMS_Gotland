@@ -4,11 +4,13 @@ import java.io.File;
 import java.io.FilenameFilter;
 import java.util.HashMap;
 
+import org.lwjgl.Sys;
+
 public class ModelPool
 {
 	private HashMap<String, Model> models = new HashMap<String, Model>();
 	
-	private final String DEFAULT_MODEL_PATH = "Resources/models/";
+	public final String DEFAULT_MODEL_PATH = "Resources/models/";
 
 	public Model getModel(String name)
 	{
@@ -30,6 +32,7 @@ public class ModelPool
 			System.out.println("ModelPool::file does not exist(" + file.getAbsolutePath() + ")");
 			return false;
 		}
+		long time = Sys.getTime();
 		Model model = null;
 		
 		if(file.getName().endsWith(".obj"))
@@ -41,7 +44,7 @@ public class ModelPool
 			model = new ModelMD2(file, true);
 		}
 		
-		System.out.println("ModelPool::load(" +  file.getName() + ")");
+		System.out.println("ModelPool::load(" +  file.getName() + ") in " + (Sys.getTime() - time) + "ms!");
 		return models.put(name, model) != null;
 	}
 	

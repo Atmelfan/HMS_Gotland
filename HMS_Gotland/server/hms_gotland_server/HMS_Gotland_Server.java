@@ -76,6 +76,7 @@ public class HMS_Gotland_Server extends Thread
 					//Update 
 					for (Entity entity : level.entities)
 					{
+						//TODO, needs to create entities on connect
 						kryoServer.sendToAllUDP(new Packet.PositionEntity(entity));
 						kryoServer.sendToAllUDP(new Packet.AngleEntity(entity));
 					}

@@ -1,7 +1,9 @@
 package level;
 
 
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Vector3f;
+
 
 
 public class ClientPlayer extends ClientEntity
@@ -20,6 +22,11 @@ public class ClientPlayer extends ClientEntity
 	public Vector3f getPos()
 	{
 		return motionstate.getWorldTransform().origin;
+	}
+
+	public Matrix4f getModelMatrix()
+	{
+		return motionstate.getWorldTransform().getMatrix(new javax.vecmath.Matrix4f());
 	}
 	
 

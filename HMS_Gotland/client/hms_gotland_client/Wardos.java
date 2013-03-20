@@ -23,6 +23,7 @@ public class Wardos
 	private int vbocId;
 	private FontRenderer font;
 	private HMS_Gotland game;
+	private int game_id;
 	
 	public Wardos(HMS_Gotland game)
 	{
@@ -32,6 +33,7 @@ public class Wardos
 		setupShader();
 		setupQuad();
 		gui_id = GLUtil.loadPNGTexture("Resources/assets/WardosScreenCracked.png", GL13.GL_TEXTURE0);
+		game_id = GLUtil.loadPNGTexture("Resources/assets/WardosScreen.png", GL13.GL_TEXTURE0);
 		font = new FontRenderer("Agency FB", 60);
 		GLUtil.cerror("Wardos.Wardos-HUD init");
 	}
@@ -59,7 +61,7 @@ public class Wardos
 		GL11.glDisable(GL11.GL_CULL_FACE);
 		ShaderUtils.useProgram(shader_id);
 		{
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, gui_id);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, game.playing ? game_id : gui_id);
 			// Bind to the VAO that has all the information about the vertices
 			GL30.glBindVertexArray(vaoId);
 			{
@@ -81,7 +83,7 @@ public class Wardos
 		}
 		ShaderUtils.useProgram(0);
 		
-		font.drawString(4, 6, "Coord: N/A", 0f, 0.5f, 0f, 175/255f);
+		//font.drawString(4, 6, "Coord: N/A", 0f, 0.5f, 0f, 175/255f);
 		//font.drawStringRightAdjusted(1024, 0, "Coord: " + game.getPlayer().getPos().toString(), 0f, 0.5f, 0f, 175/255f);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glEnable(GL11.GL_CULL_FACE);
