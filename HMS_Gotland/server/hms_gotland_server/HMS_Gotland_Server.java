@@ -105,6 +105,7 @@ public class HMS_Gotland_Server extends Thread
 		public void connected(Connection connection)
 		{
 			System.out.println((integrated ? "Server: " : "") + "###" + connection.getRemoteAddressTCP().getHostName() + " connected###");
+			System.out.println((integrated ? "Server: " : "") + "Waiting for login request");
 			super.connected(connection);
 		}
 

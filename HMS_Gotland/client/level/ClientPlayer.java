@@ -3,6 +3,10 @@ package level;
 
 import javax.vecmath.Vector3f;
 
+import com.bulletphysics.collision.dispatch.GhostObject;
+import com.bulletphysics.dynamics.RigidBody;
+import com.bulletphysics.dynamics.character.KinematicCharacterController;
+
 
 public class ClientPlayer extends ClientEntity
 {

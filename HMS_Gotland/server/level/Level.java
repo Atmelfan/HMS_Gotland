@@ -10,10 +10,8 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
 
-import javax.vecmath.Matrix3f;
 import javax.vecmath.Vector3f;
 
-import com.bulletphysics.collision.broadphase.AxisSweep3;
 import com.bulletphysics.collision.broadphase.AxisSweep3_32;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
@@ -28,10 +26,7 @@ import com.bulletphysics.linearmath.DefaultMotionState;
 import com.bulletphysics.linearmath.Transform;
 import com.bulletphysics.util.ObjectArrayList;
 
-
-import model.ModelObj;
 import model.ModelPool;
-import Util.VertexData;
 
 public class Level
 {
@@ -59,9 +54,13 @@ public class Level
 		setupWorld();
 		//Read level save file
 		levelFile = new File(DEFAULT_LEVEL_PATH + name);
-		parseLevelFile(levelFile);
-		
-		
+		try
+		{
+			parseLevelFile(levelFile);
+		} catch (IOException e)
+		{
+			System.err.println("Level.Level()" + e.getMessage());
+		}
 	}
 	
 	public void tick()
@@ -118,13 +117,13 @@ public class Level
 		}
 	}
 	
-	private void parseLevelFile(File file)
+	private void parseLevelFile(File file) throws IOException
 	{
 		System.out.println("Loading level...");
+		BufferedReader reader;
+		reader = new BufferedReader(new FileReader(new File(file, "level.lvl")));
 		try
 		{
-			BufferedReader reader = new BufferedReader(new FileReader(new File(file, "level.lvl")));
-			
 			String line = "";
 			int lineCount = 0;
 			
@@ -226,8 +225,6 @@ public class Level
 					}
 				}
 			}
-			reader.close();
-			
 		}catch (FileNotFoundException e)
 		{
 			System.out.println("Could not find level file!");
@@ -241,6 +238,9 @@ public class Level
 		{
 			System.out.println("Invalid level file!");
 			e.printStackTrace();
+		}finally
+		{
+			reader.close();
 		}
 	}
 
@@ -251,7 +251,13 @@ public class Level
 
 	public void reloadLevel()
 	{
-		parseLevelFile(levelFile);
+		try
+		{
+			parseLevelFile(levelFile);
+		} catch (IOException e)
+		{
+			System.err.println("Level.reloadLevel()" + e.getMessage());
+		}
 	}
 	
 	//BulletHole struct

@@ -1,5 +1,7 @@
 package model;
 
+import org.lwjgl.opengl.GL11;
+
 import hms_gotland_client.RenderEngine;
 
 public class Model
@@ -33,7 +35,7 @@ public class Model
 		return false;
 	}
 
-	public void drawCEL(int frame, float[] viewProjectionMatrix, float[] modelMatrix, RenderEngine engine)
+	public void drawCEL(int frame, float[] vpMatrix, float[] modelMatrix, RenderEngine engine)
 	{
 	}
 }

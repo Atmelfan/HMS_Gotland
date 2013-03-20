@@ -152,4 +152,13 @@ public class Camera
 		this.pos = pos;
 	}
 
+	public void addYaw(float yaw)
+	{
+		this.yaw += yaw;
+	}
+	
+	public void adPitch(float pitch)
+	{
+		this.pitch += pitch;
+	}
 }

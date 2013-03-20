@@ -28,7 +28,12 @@ public class ClientEntity
 	{
 		this.model = lvl.renderEngine.getModel(model);
 		this.id = id;
-		BoxShape shape = new BoxShape(new Vector3f(this.model.getXWidth(), this.model.getYHeight(), this.model.getZDepth()));
+		body = setupBody();
+	}
+	
+	protected RigidBody setupBody()
+	{
+		BoxShape shape = new BoxShape(new Vector3f(model.getXWidth() / 2, model.getYHeight() / 2, model.getZDepth() / 2));
  	    Vector3f localInertia = new Vector3f(0, 0, 0);
 	    shape.calculateLocalInertia(getMass(), localInertia);
 	    // Transform
@@ -38,17 +43,23 @@ public class ClientEntity
 	    // MotionState & body
 	    motionstate = new EntityMotionState(startTransform);
 	    RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(getMass(), motionstate, shape, localInertia);
-	    body = new RigidBody(rbInfo);
-	    body.setRestitution(0.1f);
-	    body.setFriction(0.50f);
-	    body.setDamping(0f, 0f);
+	    RigidBody tbody = new RigidBody(rbInfo);
+	    tbody.setRestitution(0.1f);
+	    tbody.setFriction(getFriction());
+	    tbody.setDamping(0f, 0f);
 	    
 	    //Associate this entity with the body and collisionshape
-	    body.setUserPointer(this);
+	    tbody.setUserPointer(this);
 	    shape.setUserPointer(this);
+	    return tbody;
+	}
+	
+	protected  float getFriction()
+	{
+		return 0.5f;
 	}
 
-	private float getMass()
+	protected  float getMass()
 	{
 		return 1;
 	}
@@ -57,6 +68,6 @@ public class ClientEntity
 	public void draw(RenderEngine engine)
 	{
 		motionstate.getWorldTransform().getOpenGLMatrix(modelMatrix);
-		model.drawCEL(frame, engine.getViewProjectionMatrix(), modelMatrix, engine);
+		model.draw(frame, engine.getViewProjectionMatrix(), modelMatrix, engine);
 	}
 }
