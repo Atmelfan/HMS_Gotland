@@ -62,7 +62,7 @@ public class RenderEngine
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		
 		GL11.glEnable(GL11.GL_CULL_FACE);
-		GL11.glCullFace(GL11.GL_FRONT);
+		GL11.glCullFace(GL11.GL_BACK);
 		
 		setupStarField();
 		GLUtil.cerror(getClass().getName() + " <init>");
@@ -155,6 +155,11 @@ public class RenderEngine
 			GL30.glBindVertexArray(0);
 		}
 		ShaderUtils.useProgram(0);
+	}
+	
+	public void destroy()
+	{
+		Display.destroy();
 	}
 	
 }

@@ -59,9 +59,10 @@ public class Camera
 		
 		if(owner != null)
 		{
-			Vector3f tr = VectorUtil.toLWJGLVector(owner.getPos());
-			tr.negate();
-			viewMatrix.translate(tr);
+			Matrix4f v = GLUtil.lwjglMatrix(owner.getModelMatrix());
+			v.invert();
+			Matrix4f.mul(viewMatrix, v, viewMatrix);
+			
 			//viewMatrix.load(GLUtil.buffer(owner.getOpenGLMatrix()));
 		}else
 		{
@@ -153,6 +154,22 @@ public class Camera
 	public void setPos(Vector3f pos)
 	{
 		this.pos = pos;
+	}
+
+	/**
+	 * @return the owner
+	 */
+	public ClientPlayer getOwner()
+	{
+		return owner;
+	}
+
+	/**
+	 * @param owner the owner to set
+	 */
+	public void setOwner(ClientPlayer owner)
+	{
+		this.owner = owner;
 	}
 
 }

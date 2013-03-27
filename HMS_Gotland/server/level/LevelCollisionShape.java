@@ -1,22 +1,19 @@
 package level;
 
-import hms_gotland_client.RenderEngine;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
 import java.util.ArrayList;
 
 import javax.vecmath.Vector3f;
 
 import org.lwjgl.BufferUtils;
 
-import com.bulletphysics.collision.broadphase.BroadphaseNativeType;
 import com.bulletphysics.collision.shapes.BvhTriangleMeshShape;
-import com.bulletphysics.collision.shapes.CollisionShape;
 import com.bulletphysics.collision.shapes.TriangleIndexVertexArray;
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
@@ -198,10 +195,20 @@ public class LevelCollisionShape
 	public ArrayList<Vector3f> mesh = new ArrayList<>();
 
 	private RigidBody body;
-	
+
+	public RigidBody body()
+	{
+		return body;
+	}
+
 	public void compileVBO()
 	{
 		//Assemble face indice
+		
+		
+		ByteBuffer index = ByteBuffer.allocate(faces.size() * 3 * 3 * 4).order(ByteOrder.nativeOrder());
+		ByteBuffer geom = ByteBuffer.allocate(faces.size() * 3 * 3 * 4).order(ByteOrder.nativeOrder());
+		int indexi = 0;
 		for (int i = 0; i < faces.size(); i++)
 		{
 			int[] tempfaces = faces.get(i);
@@ -209,28 +216,17 @@ public class LevelCollisionShape
 			for (int w = 0; w < 3; w++)
 			{
 				////////Vertex////////
-				mesh.add(new Vector3f(vertexsets.get(tempfaces[w] - 1)[0], vertexsets.get(tempfaces[w] - 1)[1], vertexsets.get(tempfaces[w] - 1)[2]));
+				index.putInt(indexi++);
+				geom.putFloat(vertexsets.get(tempfaces[w] - 1)[1]);
+				geom.putFloat(vertexsets.get(tempfaces[w] - 1)[1]);
+				geom.putFloat(vertexsets.get(tempfaces[w] - 1)[1]);
 
 			}
 			numpolys++;
 		}
-		
-		ByteBuffer index = BufferUtils.createByteBuffer(mesh.size() * 3 * 4);
-		for (int i = 0; i < mesh.size() * 3; i++)
-		{
-			index.putInt(i);
-		}
-		
-		ByteBuffer geom = BufferUtils.createByteBuffer(mesh.size() * 3 * 4);
-		for (int i = 0; i < mesh.size(); i++)
-		{
-			geom.putFloat(mesh.get(i).x);
-			geom.putFloat(mesh.get(i).y);
-			geom.putFloat(mesh.get(i).z);
-		}
 		index.rewind();
 		geom.rewind();
-		TriangleIndexVertexArray trimesh = new TriangleIndexVertexArray(numpolygons(), index, 3 * 4, numpolygons(), geom, 3 * 4);
+		TriangleIndexVertexArray trimesh = new TriangleIndexVertexArray(numpolygons(), index, 3 * 4, mesh.size(), geom, 3 * 4);
 		BvhTriangleMeshShape trimeshshape = new BvhTriangleMeshShape(trimesh,true);
 		
 		Transform groundTransform = new Transform();

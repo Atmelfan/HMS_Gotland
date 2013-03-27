@@ -48,7 +48,7 @@ public class ClientEntity
 	    shape.setUserPointer(this);
 	}
 
-	private float getMass()
+	protected float getMass()
 	{
 		return 1;
 	}

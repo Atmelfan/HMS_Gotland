@@ -19,7 +19,7 @@ import hms_gotland_client.RenderEngine;
 
 public class Entity
 {
-	private static int entityIDs = 0;
+	public static int entityIDs = 0;
 	public int entityID = entityIDs++;
 	
 	protected RigidBody body;//Physics body

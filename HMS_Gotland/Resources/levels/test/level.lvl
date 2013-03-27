@@ -2,7 +2,9 @@
 &name test_level
 
 //Level data(stored as .obj)
-&obj ship.obj
+&obj Resources/levels/test/ftl.obj
+
+&player pos 0 10 0
 
 //Add a test entity
 //&entity default {
@@ -16,5 +18,4 @@
 	&gui prompt "OFFLINE"
 	&delay 1000
 	&gui clear
-	&player pos 0 10 -15
 }

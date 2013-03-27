@@ -9,6 +9,7 @@ import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 
 import javax.vecmath.Matrix3f;
@@ -56,6 +57,10 @@ public class Level
 	public ModelPool modelpool;
 	
 	private HMS_Gotland_Server game;
+
+	private Vector3f playerPos = new Vector3f();
+
+	public String modelName;
 	
 	public Level(String name, HMS_Gotland_Server hms_Gotland_Server)
 	{
@@ -117,8 +122,7 @@ public class Level
 			Vector3f v = new Vector3f(entity.getPos());
 			v.sub(pos);
 			
-			Vector3f v1 = new Vector3f(entity.getPos());
-			v1.sub(pos);
+			Vector3f v1 = new Vector3f(v);
 			v1.normalize();
 			//Field force lowers by distance squared
 			v1.scale(power - v1.lengthSquared());
@@ -181,7 +185,14 @@ public class Level
 				}
 				if(line.startsWith("&player"))
 				{
-					//TODO
+					String[] lines = line.split(" ");
+					if(lines.length > 4 && lines[1].equalsIgnoreCase("pos"))
+					{
+						playerPos = new Vector3f(Float.parseFloat(lines[2]), Float.parseFloat(lines[3]), Float.parseFloat(lines[4]));
+					}else
+					{
+						throw new LevelException(file.getName(), "Invalid &player command", lineCount);
+					}
 				}
 				if(line.startsWith("&name"))
 				{
@@ -199,42 +210,9 @@ public class Level
 					String[] lines = line.split(" ");
 					if(lines.length > 1)
 					{
-						model = new LevelCollisionShape(new File(file, lines[1]), false);
-						
-						//Create body
-						ArrayList<Vector3f> mesh = model.mesh;
-						ByteBuffer index = BufferUtils.createByteBuffer(mesh.size() * 3 * 4);
-						for (int i = 0; i < mesh.size() * 3; i++)
-						{
-							index.putInt(i);
-						}
-						
-						ByteBuffer geom = BufferUtils.createByteBuffer(mesh.size() * 3 * 4);
-						for (int i = 0; i < mesh.size(); i++)
-						{
-							geom.putFloat(mesh.get(i).x);
-							geom.putFloat(mesh.get(i).y);
-							geom.putFloat(mesh.get(i).z);
-						}
-						index.rewind();
-						geom.rewind();
-						TriangleIndexVertexArray trimesh = new TriangleIndexVertexArray(model.numpolygons(), index, 3 * 4, model.numpolygons(), geom, 3 * 4);
-						BvhTriangleMeshShape trimeshshape = new BvhTriangleMeshShape(trimesh,true);
-						
-						Transform groundTransform = new Transform();
-						groundTransform.setIdentity();
-						groundTransform.origin.set(new Vector3f(0F, 0F, 0F));
-						float mass = 0F;
-						Vector3f localInertia = new Vector3f(0F, 0F, 0F);
-					    DefaultMotionState myMotionState = new DefaultMotionState(groundTransform);
-						RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, myMotionState, trimeshshape, localInertia);
-						levelbody = new RigidBody(rbInfo);
-						levelbody.setRestitution(0.1f);
-						levelbody.setFriction(0.50f);
-						levelbody.setDamping(0f, 0f);
-						//Add level body to level
-						level.addRigidBody(levelbody);
-						model.mesh.clear();
+						modelName = lines[1];
+						model = new LevelCollisionShape(new File(lines[1]), false);
+						levelbody = model.body();
 					}else
 					{
 						throw new LevelException(file.getName(), "Invalid &obj command", lineCount);
@@ -274,5 +252,10 @@ public class Level
 	{
 		Vector3f position;
 		Vector3f normal;
+	}
+
+	public Vector3f getPlayerPos()
+	{
+		return playerPos;
 	}
 }

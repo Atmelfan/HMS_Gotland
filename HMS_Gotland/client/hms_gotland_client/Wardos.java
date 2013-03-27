@@ -24,6 +24,9 @@ public class Wardos
 	private FontRenderer font;
 	private HMS_Gotland game;
 	private int game_id;
+	private int fboID;
+	private int fbotexID;
+	private int fborboID;
 	
 	public Wardos(HMS_Gotland game)
 	{
@@ -53,6 +56,30 @@ public class Wardos
 		GL20.glValidateProgram(shader_id);
 		
 		GLUtil.cerror("HUD shader init");
+	}
+	
+	public void setupVBO()
+	{
+		fboID = GL30.glGenFramebuffers();
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fboID);
+		{
+			fbotexID = GL11.glGenTextures();
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, fbotexID);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, 1024, 512, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, 0);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+			fborboID = GL30.glGenRenderbuffers();
+			GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, fborboID);
+			{
+				GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, 1024, 512);
+				GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, fborboID);
+				GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, fbotexID, 0);
+				GL11.glDrawBuffer(GL30.GL_COLOR_ATTACHMENT0);
+			}
+		}
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+		if(GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) != GL30.GL_FRAMEBUFFER_COMPLETE)
+			System.out.println("Error initializing FBO!");
 	}
 	
 	public void draw()

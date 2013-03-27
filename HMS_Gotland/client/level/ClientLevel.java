@@ -3,6 +3,7 @@ package level;
 import hms_gotland_client.HMS_Gotland;
 import hms_gotland_client.RenderEngine;
 
+import java.io.File;
 import java.util.ArrayList;
 
 import javax.vecmath.Vector3f;
@@ -13,6 +14,7 @@ import level.Entity;
 import level.EntityPlayer;
 import level.Level.BulletHole;
 import model.Model;
+import model.ModelObj;
 
 import com.bulletphysics.collision.broadphase.AxisSweep3;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
@@ -35,14 +37,15 @@ public class ClientLevel
 	public RenderEngine renderEngine;
 	public ClientPlayer player;
 	private long lastTick;
+	private String name;
+	private int playerID;
+	private Vector3f playerOriginPos;
+	private String mesh;
 	
 	public ClientLevel(HMS_Gotland gotland)
 	{
 		renderEngine = gotland.renderEngine;
 		setupWorld();
-		player = new ClientPlayer(this, "lara/Lara_Croft.obj", 0);
-		addEntity(player);
-		
 	}
 	
 	private void setupWorld()
@@ -88,17 +91,41 @@ public class ClientLevel
 
 	public void setLevel(String name)
 	{
-		model = renderEngine.getModel(name);
+		this.name = name;
 	}
 	
 	public void tick()
-	{
+	{	
+		if(mesh != null && levelbody == null)
+		{
+			model = new ModelObj(new File(mesh), true);
+			levelbody = new LevelCollisionShape(new File(mesh), true).body();
+			level.addRigidBody(levelbody);
+			createPlayer(playerID, playerOriginPos);
+			System.out.println("Created level at " + levelbody.getWorldTransform(new Transform()).origin + 
+					", player at " + playerOriginPos);
+		}
 		level.stepSimulation(1/60F);
 	}
 
 	public void destroy()
 	{
 		level.destroy();
+	}
+
+	public void createPlayer(int playerID, Vector3f playerPos)
+	{
+		player = new ClientPlayer(this, "lara/Lara_Croft.obj", playerID);
+		player.setPos(playerPos);
+		renderEngine.camera.setOwner(player);
+		addEntity(player);
+	}
+
+	public void setPlayerAndLevel(int playerid, Vector3f playerPos, String levelName)
+	{
+		playerID = playerid;
+		playerOriginPos = playerPos;
+		mesh = levelName;
 	}
 
 }

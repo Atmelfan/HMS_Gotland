@@ -44,7 +44,7 @@ public class ModelPool
 			model = new ModelMD2(file, true);
 		}
 		
-		System.out.println("ModelPool::load(" +  file.getName() + ") in " + (Sys.getTime() - time) + "ms!");
+		//System.out.println("ModelPool::load(" +  file.getName() + ") in " + (Sys.getTime() - time) + "ms!");
 		return models.put(name, model) != null;
 	}
 	

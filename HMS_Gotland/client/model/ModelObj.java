@@ -57,7 +57,7 @@ public class ModelObj extends Model
 	
 	public ModelObj(File file, boolean clearVertexData)
 	{
-		System.out.println("Loading " + file.getName());
+		//System.out.println("OBJ:Loading " + file.getName());
 		read(file);
 		centerit();
 		compileFaceGroups();
@@ -89,6 +89,9 @@ public class ModelObj extends Model
 		GL20.glBindAttribLocation(shader_id, 2, "in_Normal");
 		
 		GL20.glValidateProgram(shader_id);
+		
+		mdMatrixPos = GL20.glGetUniformLocation(shader_id, "modelMatrix");
+		vpMatrixPos = GL20.glGetUniformLocation(shader_id, "viewprojMatrix");
 		GLUtil.cerror(getClass().getName() + " setupShader");
 		
 	}
@@ -247,6 +250,8 @@ public class ModelObj extends Model
 	}
 	
 	private HashMap<String, FaceGroup> mtllibs = new HashMap<>();
+	private int vpMatrixPos;
+	private int mdMatrixPos;
 	private void loadMTL(String string, File f)
 	{
 		File mtllib = new File(f, string);
@@ -346,21 +351,18 @@ public class ModelObj extends Model
 		//TODO fix ugly quick hacked OpenGL code
 		ShaderUtils.useProgram(shader_id);
 		{
+			GL20.glUniformMatrix4(vpMatrixPos, false, GLUtil.bufferMatrix(vpMatrix));
+			GL20.glUniformMatrix4(vpMatrixPos, false, GLUtil.bufferMatrix(matrix));
 			ShaderUtils.setUniformMatrix4(shader_id, "viewprojMatrix", vpMatrix);
 			ShaderUtils.setUniformMatrix4(shader_id, "modelMatrix", matrix);
-			GL11.glDisable(GL11.GL_CULL_FACE);
 			
 			for (FaceGroup g : mtllibs.values())
 			{
 				
-				GL20.glEnableVertexAttribArray(0);
-				GL20.glEnableVertexAttribArray(1);
-				GL20.glEnableVertexAttribArray(2);
+				
 				g.drawArray();
 			}
 			GL30.glBindVertexArray(0);
-			
-			GL11.glEnable(GL11.GL_CULL_FACE);
 			
 		}
 		ShaderUtils.useProgram(0);
@@ -457,6 +459,10 @@ public class ModelObj extends Model
 					GL20.glVertexAttribPointer(2, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
 				}
 				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+				//Enable the attrib arrays
+				GL20.glEnableVertexAttribArray(0);
+				GL20.glEnableVertexAttribArray(1);
+				GL20.glEnableVertexAttribArray(2);
 			}
 			GL30.glBindVertexArray(0);
 			GLUtil.cerror(getClass().getName() + " compileVBO");
