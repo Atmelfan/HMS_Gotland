@@ -13,6 +13,7 @@ import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
+import Util.GLUtil;
 import Util.VectorUtil;
 
 
@@ -23,8 +24,8 @@ import Util.VectorUtil;
  */
 public class Camera
 {
-	public boolean thirdPerson = false;
-	public float thirdPersonRadius = 10F;
+	public boolean thirdPerson = true;
+	public float thirdPersonRadius = 3F;
 	
 	public ClientPlayer owner;
 	
@@ -54,12 +55,15 @@ public class Camera
 		}
 		viewMatrix.rotate((float) Math.toRadians(pitch), new Vector3f(1, 0, 0));
 		viewMatrix.rotate((float) Math.toRadians(yaw), new Vector3f(0, 1, 0));
+		viewMatrix.rotate((float) Math.toRadians(180), new Vector3f(0, 0, 1));
 		
 		if(owner != null)
 		{
-			javax.vecmath.Vector3f npos = new javax.vecmath.Vector3f(owner.getPos());
-			npos.negate();
-			viewMatrix.translate(VectorUtil.toLWJGLVector(npos));
+			Matrix4f v = GLUtil.lwjglMatrix(owner.getModelMatrix());
+			v.invert();
+			Matrix4f.mul(viewMatrix, v, viewMatrix);
+			
+			//viewMatrix.load(GLUtil.buffer(owner.getOpenGLMatrix()));
 		}else
 		{
 			viewMatrix.translate(pos);
@@ -150,6 +154,22 @@ public class Camera
 	public void setPos(Vector3f pos)
 	{
 		this.pos = pos;
+	}
+
+	/**
+	 * @return the owner
+	 */
+	public ClientPlayer getOwner()
+	{
+		return owner;
+	}
+
+	/**
+	 * @param owner the owner to set
+	 */
+	public void setOwner(ClientPlayer owner)
+	{
+		this.owner = owner;
 	}
 
 	public void addYaw(float yaw)

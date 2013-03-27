@@ -23,6 +23,10 @@ public class Wardos
 	private int vbocId;
 	private FontRenderer font;
 	private HMS_Gotland game;
+	private int game_id;
+	private int fboID;
+	private int fbotexID;
+	private int fborboID;
 	
 	public Wardos(HMS_Gotland game)
 	{
@@ -32,6 +36,7 @@ public class Wardos
 		setupShader();
 		setupQuad();
 		gui_id = GLUtil.loadPNGTexture("Resources/assets/WardosScreenCracked.png", GL13.GL_TEXTURE0);
+		game_id = GLUtil.loadPNGTexture("Resources/assets/WardosScreen.png", GL13.GL_TEXTURE0);
 		font = new FontRenderer("Agency FB", 60);
 		GLUtil.cerror("Wardos.Wardos-HUD init");
 	}
@@ -53,13 +58,37 @@ public class Wardos
 		GLUtil.cerror("HUD shader init");
 	}
 	
+	public void setupVBO()
+	{
+		fboID = GL30.glGenFramebuffers();
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, fboID);
+		{
+			fbotexID = GL11.glGenTextures();
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, fbotexID);
+			GL11.glTexImage2D(GL11.GL_TEXTURE_2D, 0, GL11.GL_RGB, 1024, 512, 0, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, 0);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_NEAREST);
+			GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_NEAREST);
+			fborboID = GL30.glGenRenderbuffers();
+			GL30.glBindRenderbuffer(GL30.GL_RENDERBUFFER, fborboID);
+			{
+				GL30.glRenderbufferStorage(GL30.GL_RENDERBUFFER, GL11.GL_DEPTH_COMPONENT, 1024, 512);
+				GL30.glFramebufferRenderbuffer(GL30.GL_FRAMEBUFFER, GL30.GL_DEPTH_ATTACHMENT, GL30.GL_RENDERBUFFER, fborboID);
+				GL30.glFramebufferTexture2D(GL30.GL_FRAMEBUFFER, GL30.GL_COLOR_ATTACHMENT0, GL11.GL_TEXTURE_2D, fbotexID, 0);
+				GL11.glDrawBuffer(GL30.GL_COLOR_ATTACHMENT0);
+			}
+		}
+		GL30.glBindFramebuffer(GL30.GL_FRAMEBUFFER, 0);
+		if(GL30.glCheckFramebufferStatus(GL30.GL_FRAMEBUFFER) != GL30.GL_FRAMEBUFFER_COMPLETE)
+			System.out.println("Error initializing FBO!");
+	}
+	
 	public void draw()
 	{
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_CULL_FACE);
 		ShaderUtils.useProgram(shader_id);
 		{
-			GL11.glBindTexture(GL11.GL_TEXTURE_2D, gui_id);
+			GL11.glBindTexture(GL11.GL_TEXTURE_2D, game.playing ? game_id : gui_id);
 			// Bind to the VAO that has all the information about the vertices
 			GL30.glBindVertexArray(vaoId);
 			{
@@ -81,7 +110,7 @@ public class Wardos
 		}
 		ShaderUtils.useProgram(0);
 		
-		font.drawString(4, 6, "Coord: N/A", 0f, 0.5f, 0f, 175/255f);
+		//font.drawString(4, 6, "Coord: N/A", 0f, 0.5f, 0f, 175/255f);
 		//font.drawStringRightAdjusted(1024, 0, "Coord: " + game.getPlayer().getPos().toString(), 0f, 0.5f, 0f, 175/255f);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glEnable(GL11.GL_CULL_FACE);

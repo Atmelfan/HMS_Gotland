@@ -8,15 +8,22 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.nio.ByteBuffer;
+import java.nio.IntBuffer;
 import java.util.ArrayList;
 
 import javax.vecmath.Vector3f;
+
+import org.lwjgl.BufferUtils;
 
 import com.bulletphysics.collision.broadphase.AxisSweep3_32;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.collision.shapes.BoxShape;
+import com.bulletphysics.collision.shapes.BvhTriangleMeshShape;
 import com.bulletphysics.collision.shapes.CollisionShape;
+import com.bulletphysics.collision.shapes.IndexedMesh;
+import com.bulletphysics.collision.shapes.TriangleIndexVertexArray;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.DynamicsWorld;
 import com.bulletphysics.dynamics.RigidBody;
@@ -39,12 +46,16 @@ public class Level
 	public String name;
 	
 	//Physics
-	public LevelMesh model;
+	public LevelCollisionShape model;
 	public RigidBody levelbody;
 	public DynamicsWorld level;
 	public ModelPool modelpool;
 	
 	private HMS_Gotland_Server game;
+
+	private Vector3f playerPos = new Vector3f();
+
+	public String modelName;
 	
 	public Level(String name, HMS_Gotland_Server hms_Gotland_Server)
 	{
@@ -59,10 +70,10 @@ public class Level
 			parseLevelFile(levelFile);
 		} catch (IOException e)
 		{
-			System.err.println("Level.Level()" + e.getMessage());
+			System.err.println("Error loading level:  - " + e.getMessage());
 		}
 	}
-	
+
 	public void tick()
 	{
 		for(int i = 0; i < entities.size(); i++)
@@ -107,8 +118,7 @@ public class Level
 			Vector3f v = new Vector3f(entity.getPos());
 			v.sub(pos);
 			
-			Vector3f v1 = new Vector3f(entity.getPos());
-			v1.sub(pos);
+			Vector3f v1 = new Vector3f(v);
 			v1.normalize();
 			//Field force lowers by distance squared
 			v1.scale(power - v1.lengthSquared());
@@ -171,7 +181,14 @@ public class Level
 				}
 				if(line.startsWith("&player"))
 				{
-					//TODO
+					String[] lines = line.split(" ");
+					if(lines.length > 4 && lines[1].equalsIgnoreCase("pos"))
+					{
+						playerPos = new Vector3f(Float.parseFloat(lines[2]), Float.parseFloat(lines[3]), Float.parseFloat(lines[4]));
+					}else
+					{
+						throw new LevelException(file.getName(), "Invalid &player command", lineCount);
+					}
 				}
 				if(line.startsWith("&name"))
 				{
@@ -189,36 +206,9 @@ public class Level
 					String[] lines = line.split(" ");
 					if(lines.length > 1)
 					{
-						model = new LevelMesh(new File(file, lines[1]), false);
-						
-						//Get vertex data
-						Vector3f[] data = model.mesh.toArray(new Vector3f[0]);
-						
-						//Assemble vertex data into hull vectors
-						ObjectArrayList<Vector3f> vertes = new ObjectArrayList<Vector3f>();
-						
-						for (int i = 0; i < data.length; i++)
-						{
-							vertes.add(data[i]);
-						}
-						//Create body
-						//TriangleIndexVertexArray array = new TriangleIndexVertexArray(model.numpolygons(), );
-						
-						CollisionShape groundShape = new BoxShape(new Vector3f(model.getXWidth(), model.getYHeight(), model.getZDepth()));
-						Transform groundTransform = new Transform();
-						groundTransform.setIdentity();
-						groundTransform.origin.set(new Vector3f(0F, 0F, 0F));
-						float mass = 0F;
-						Vector3f localInertia = new Vector3f(0F, 0F, 0F);
-					    DefaultMotionState myMotionState = new DefaultMotionState(groundTransform);
-						RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(mass, myMotionState, groundShape, localInertia);
-						levelbody = new RigidBody(rbInfo);
-						levelbody.setRestitution(0.1f);
-						levelbody.setFriction(0.50f);
-						levelbody.setDamping(0f, 0f);
-						//Add level body to level
-						level.addRigidBody(levelbody);
-						model.mesh.clear();
+						modelName = lines[1];
+						model = new LevelCollisionShape(new File(lines[1]), false);
+						levelbody = model.body();
 					}else
 					{
 						throw new LevelException(file.getName(), "Invalid &obj command", lineCount);
@@ -265,5 +255,10 @@ public class Level
 	{
 		Vector3f position;
 		Vector3f normal;
+	}
+
+	public Vector3f getPlayerPos()
+	{
+		return playerPos;
 	}
 }

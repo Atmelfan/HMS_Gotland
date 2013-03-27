@@ -76,8 +76,7 @@ public class HMS_Gotland_Server extends Thread
 					//Update 
 					for (Entity entity : level.entities)
 					{
-						kryoServer.sendToAllUDP(new Packet.PositionEntity(entity));
-						kryoServer.sendToAllUDP(new Packet.AngleEntity(entity));
+						//
 					}
 					lastTick = System.currentTimeMillis();
 				}
@@ -105,7 +104,6 @@ public class HMS_Gotland_Server extends Thread
 		public void connected(Connection connection)
 		{
 			System.out.println((integrated ? "Server: " : "") + "###" + connection.getRemoteAddressTCP().getHostName() + " connected###");
-			System.out.println((integrated ? "Server: " : "") + "Waiting for login request");
 			super.connected(connection);
 		}
 
@@ -123,26 +121,22 @@ public class HMS_Gotland_Server extends Thread
 		@Override
 		public void idle(Connection connection)
 		{
-			EntityPlayer player = players.get(connection);
-			if(player != null)
-			{
-				System.out.println((integrated ? "Server: " : "") + player.username + " is idle.");
-			}
 			super.idle(connection);
 		}
 		
 		@Override
 		public void received(Connection connection, Object object)
 		{
-			System.out.println("hey");
+			//System.out.println(object);
 			if(object instanceof Packet.Login)
 			{
-				System.out.println("hey");
+				//System.out.println("hey");
 				if(players.get(connection) == null)
 				{
 					String name = ((Packet.Login)object).name;
 					players.put(connection, new EntityPlayer(level, name));
 					connection.setName(name);
+					connection.sendTCP(new Packet.AcceptLogin(Entity.entityIDs++, level.getPlayerPos(), level.modelName));
 					System.out.println((integrated ? "Server: " : "") + name + " logged in.");
 				}
 			}

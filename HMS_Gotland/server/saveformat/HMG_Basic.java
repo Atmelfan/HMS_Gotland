@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-public class HMG_Basic
+abstract class HMG_Basic
 {
 	public String name;
 	
@@ -17,10 +17,7 @@ public class HMG_Basic
 		name = s;
 	}
 	
-	public int getID()
-	{
-		return 0;
-	}
+	public abstract int getID();
 	
 	public void read(DataInputStream in) throws IOException
 	{

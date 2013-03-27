@@ -70,4 +70,10 @@ public class ClientEntity
 		motionstate.getWorldTransform().getOpenGLMatrix(modelMatrix);
 		model.draw(frame, engine.getViewProjectionMatrix(), modelMatrix, engine);
 	}
+	
+	public float[] getOpenGLMatrix()
+	{
+		motionstate.getWorldTransform().getOpenGLMatrix(modelMatrix);
+		return modelMatrix;
+	}
 }

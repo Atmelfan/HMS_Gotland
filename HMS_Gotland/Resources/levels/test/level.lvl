@@ -6,7 +6,9 @@
 }
 
 //Level data(stored as .obj)
-&obj ship.obj
+&obj Resources/levels/test/ftl.obj
+
+&player pos 0 10 0
 
 //Player settings
 &player {
@@ -23,3 +25,10 @@
 	&pos 0 0 0
 }
 
+#event player.death
+{
+	&gui display static
+	&gui prompt "OFFLINE"
+	&delay 1000
+	&gui clear
+}

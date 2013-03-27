@@ -62,7 +62,7 @@ public class RenderEngine
 		GL11.glBlendFunc(GL11.GL_SRC_ALPHA, GL11.GL_ONE_MINUS_SRC_ALPHA);
 		
 		GL11.glEnable(GL11.GL_CULL_FACE);
-		GL11.glCullFace(GL11.GL_FRONT);
+		GL11.glCullFace(GL11.GL_BACK);
 		
 		setupStarField();
 		GLUtil.cerror(getClass().getName() + " <init>");
@@ -92,8 +92,8 @@ public class RenderEngine
 		{
 			float yaw = 	(float) (Math.random() * 2 * Math.PI);
 			float pitch = 	(float) (Math.random() * 2 * Math.PI);
-			starVertices[i + 0] = (float) (distance * Math.cos(yaw));
-			starVertices[i + 1] = (float) (distance * Math.sin(yaw));
+			starVertices[i + 0] = (float) (distance * Math.cos(yaw) * Math.sin(pitch));
+			starVertices[i + 1] = (float) (distance * Math.sin(yaw) * Math.sin(pitch));
 			starVertices[i + 2] = (float) (distance * Math.cos(pitch));
 			
 			starColors[i + 0] = (float) Math.random() + 0.8f;
@@ -155,6 +155,11 @@ public class RenderEngine
 			GL30.glBindVertexArray(0);
 		}
 		ShaderUtils.useProgram(0);
+	}
+	
+	public void destroy()
+	{
+		Display.destroy();
 	}
 	
 }
