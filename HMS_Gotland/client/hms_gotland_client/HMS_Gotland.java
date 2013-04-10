@@ -52,10 +52,13 @@ public class HMS_Gotland
 
 	private Client client;
 	private HMS_Gotland_Server server;
+	private ResourceManager resources;
 	
 	private Wardos wardos;
 	private boolean running = true;
 	public boolean playing;
+	private long lastTick;
+	private Server connectedServer;
 	
 	public HMS_Gotland() 
 	{
@@ -68,23 +71,23 @@ public class HMS_Gotland
 		try
 		{
 			Thread.currentThread().setName("HMS_Gotland_Client");
+			resources = new ResourceManager(this);
 			renderEngine = new RenderEngine(this, WIDTH, HEIGHT);
 			wardos = new Wardos(this);
 			lastFrame = Sys.getTime();
 			printInfo();
+			//wardos.playMovie("generic://test.avi");
 			
 			while (running) 
 			{
 				running = !Display.isCloseRequested();
 				
 				updateTiming();
-				tick();
 				input();
 				
 				render();
-				Display.sync(60);
+				//Display.sync(60);
 				Display.update();
-				GLUtil.cerror("HMS_Gotland.run-main loop");
 			}
 		} catch (Exception e)
 		{
@@ -95,12 +98,14 @@ public class HMS_Gotland
 		{
 			System.out.println("Shutting down...");
 			quitGame();
+			wardos.stopMovie();
 			renderEngine.destroy();
 		}
 	}
 
 	private void tick()
 	{
+		renderEngine.tick();
 		if(!updateGame())
 		{
 			renderEngine.camera.yaw += 0.05f;
@@ -119,38 +124,21 @@ public class HMS_Gotland
 		return false;
 	}
 	
-	public void startGame(boolean singleplayer, String ip, int tcp, int udp) throws IOException
+	public void startGame(Server server) throws IOException
 	{
 		if(playing) return;
 		
 		playing = true;
-		if(singleplayer)
-		{
-			//Create new level
-			setLevel(new ClientLevel(this));
-			//Create server
-			server = new HMS_Gotland_Server(true, tcp, udp);
-			server.start();
-			//Create server connection
-			client = new Client();
-			Packet.registerPackets(client.getKryo());
-			client.addListener(listener);
-			client.start();
-			//Connect
-			client.connect(5000, ip, tcp, udp);
-			
-		}else
-		{
-			//Create new level
-			setLevel(new ClientLevel(this));
-			//Create server connection
-			client = new Client();
-			Packet.registerPackets(client.getKryo());
-			client.addListener(listener);
-			client.start();
-			//Connect
-			client.connect(5000, ip, tcp, udp);
-		}
+		//Create new level
+		setLevel(new ClientLevel(this));
+		//Create server connection
+		client = new Client();
+		Packet.registerPackets(client.getKryo());
+		client.addListener(listener);
+		client.start();
+		//Connect
+		server.connect(client);
+		connectedServer = server;
 	}
 	
 	public void quitGame()
@@ -163,11 +151,9 @@ public class HMS_Gotland
 			level.destroy();
 			level = null;
 		}
-		if(server != null)
+		if(connectedServer != null)
 		{
-			//Stop and clean up if available
-			server.terminate();
-			server = null;
+			connectedServer.disconnect(client);
 		}
 		if(client != null)
 		{
@@ -188,6 +174,11 @@ public class HMS_Gotland
 			currentfps = 0;
 			Display.setTitle(WINDOW_TITLE + fps);
 		}
+		if(Sys.getTime() - lastTick >= 16)
+		{
+			lastTick = Sys.getTime();
+			tick();
+		}
 	}
 
 	private void input() 
@@ -205,11 +196,15 @@ public class HMS_Gotland
 		
 		if(Mouse.isGrabbed())
 		{
-			renderEngine.camera.yaw -= Mouse.getDX();
-			renderEngine.camera.pitch -= Mouse.getDY();
-			renderEngine.camera.pitch = Math.max(renderEngine.camera.pitch, 45);
-			renderEngine.camera.pitch = Math.min(renderEngine.camera.pitch, 315);
+			renderEngine.camera.pitch += Mouse.getDY();
+			renderEngine.camera.pitch = clamp(renderEngine.camera.pitch, -35, 35);
+			renderEngine.camera.yaw += Mouse.getDX();
+			if(level != null && level.player != null)
+			{
+				level.player.move(-renderEngine.camera.yaw);
+			}
 		}
+		
 		
 		
 		while(Keyboard.next()) 
@@ -218,7 +213,8 @@ public class HMS_Gotland
 			if (!Keyboard.getEventKeyState()) continue;
 			
 			// Switch textures depending on the key released
-			switch (Keyboard.getEventKey()) 
+			int key = Keyboard.getEventKey();
+			switch(key) 
 			{
 				/*
 				 * Game control keys
@@ -229,7 +225,7 @@ public class HMS_Gotland
 			case Keyboard.KEY_F1:
 				try
 				{
-					startGame(true, "127.0.0.1", 4321, 4322);
+					startGame(resources.getServers()[0]);
 				} catch (IOException e)
 				{
 					System.err.println("Error: HMS_Gotland.input() - " + e.getMessage());
@@ -238,7 +234,11 @@ public class HMS_Gotland
 				/*
 				 * Movement keys
 				 */
-			
+			default:
+				if(level != null && level.player != null)
+				{
+					level.player.input(key, renderEngine.camera.yaw);
+				}
 			}
 			
 		}
@@ -250,13 +250,16 @@ public class HMS_Gotland
 	{
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
-		
-		renderEngine.drawStarField();
-		if(getLevel() != null)
+		if(!wardos.isPlayingMovie())
 		{
-			getLevel().draw();
+			renderEngine.drawStarField();
+			if(getLevel() != null)
+			{
+				getLevel().draw();
+			}
 		}
 		wardos.draw();
+		GLUtil.cerror("HMS_Gotland.render loop");
 	}
 
 	private Listener listener = new Listener()
@@ -321,4 +324,20 @@ public class HMS_Gotland
 	{
 		this.level = level;
 	}
+	
+	public static float clamp (float i, float low, float high) 
+	{
+	    return Math.max(Math.min (i, high), low);
+	  }
+
+	public RenderEngine getRenderEngine()
+	{
+		return renderEngine;
+	}
+
+	public ResourceManager getResourceManager()
+	{
+		return resources;
+	}
+
 }

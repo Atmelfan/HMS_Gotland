@@ -1,10 +1,37 @@
 package hms_gotland_client;
 
+import static org.lwjgl.opengl.GL11.GL_LINEAR;
+import static org.lwjgl.opengl.GL11.GL_REPEAT;
+import static org.lwjgl.opengl.GL11.GL_RGB;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_2D;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MAG_FILTER;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_MIN_FILTER;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_S;
+import static org.lwjgl.opengl.GL11.GL_TEXTURE_WRAP_T;
+import static org.lwjgl.opengl.GL11.GL_UNSIGNED_BYTE;
+import static org.lwjgl.opengl.GL11.glBindTexture;
+import static org.lwjgl.opengl.GL11.glGenTextures;
+import static org.lwjgl.opengl.GL11.glTexImage2D;
+import static org.lwjgl.opengl.GL11.glTexParameterf;
+import static org.lwjgl.opengl.GL11.glTexSubImage2D;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.ByteBuffer;
+
+import net.indiespot.media.AudioRenderer.State;
+import net.indiespot.media.Movie;
+import net.indiespot.media.impl.FFmpeg;
+import net.indiespot.media.impl.OpenALAudioRenderer;
+
+import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+
+import craterstudio.math.EasyMath;
 
 import Util.GLUtil;
 import Util.ShaderUtils;
@@ -35,10 +62,77 @@ public class Wardos
 		this.game = game;
 		setupShader();
 		setupQuad();
-		gui_id = GLUtil.loadPNGTexture("Resources/assets/WardosScreenCracked.png", GL13.GL_TEXTURE0);
-		game_id = GLUtil.loadPNGTexture("Resources/assets/WardosScreen.png", GL13.GL_TEXTURE0);
+		gui_id = game.getRenderEngine().getTexture("generic://WardosScreenCracked.png", GL13.GL_TEXTURE0);
+		game_id = game.getRenderEngine().getTexture("generic://WardosScreen.png", GL13.GL_TEXTURE0);
 		font = new FontRenderer("Agency FB", 60);
 		GLUtil.cerror("Wardos.Wardos-HUD init");
+	}
+	
+	private int movieTextureID;
+	private Movie movie;
+	private ByteBuffer textureBuffer;
+	private OpenALAudioRenderer audioRenderer;
+	
+	public void pauseMovie(boolean pause)
+	{
+		if(movie != null)
+		if(pause)
+		{
+			audioRenderer.pause();
+		}else
+		{
+			audioRenderer.resume();
+		}
+	}
+	
+	public void playMovie(String s) throws IOException
+	{
+		
+		movie = Movie.open(game.getResourceManager().getResource(s));
+
+		audioRenderer = new OpenALAudioRenderer();
+		audioRenderer.init(movie.audioStream(), movie.framerate());
+		
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		if(movieTextureID == 0)
+			movieTextureID = glGenTextures();
+		glBindTexture(GL_TEXTURE_2D, movieTextureID);
+
+		// All RGB bytes are aligned to each other and each component is 1 byte
+		GL11.glPixelStorei(GL11.GL_UNPACK_ALIGNMENT, 1);
+
+		int wPot = movie.width();
+		int hPot = movie.height();
+
+		// 'tmpbuf' should be null, but some drivers are too buggy
+		textureBuffer = BufferUtils.createByteBuffer(wPot * hPot * 3);
+		glTexImage2D(GL_TEXTURE_2D, 0/* level */, GL_RGB, wPot, hPot, 0/* border */, GL_RGB, GL_UNSIGNED_BYTE, textureBuffer);
+		GL30.glGenerateMipmap(GL11.GL_TEXTURE_2D);
+		// Setup the ST coordinate system
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_S, GL11.GL_REPEAT);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_WRAP_T, GL11.GL_REPEAT);
+		// Setup what to do when the texture has to be scaled
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MAG_FILTER, GL11.GL_LINEAR);
+		GL11.glTexParameteri(GL11.GL_TEXTURE_2D, GL11.GL_TEXTURE_MIN_FILTER, GL11.GL_LINEAR);
+	}
+	
+	public void stopMovie()
+	{
+		if(movie != null)
+		{
+			try
+			{
+				textureBuffer.clear();
+				textureBuffer = null;
+				movie.close();
+				movie = null;
+				audioRenderer.close();
+				audioRenderer = null;
+			} catch (IOException e)
+			{
+				System.err.println("Error: Wardos.stopMovie() - " + e.getMessage());
+			}
+		}
 	}
 	
 	public void setupShader()
@@ -86,9 +180,50 @@ public class Wardos
 	{
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_CULL_FACE);
+		if(movie != null)
+		{
+			audioRenderer.tick(movie);
+			outer:
+			if(movie.isTimeForNextFrame()) 
+			{
+				final int maxFramesBacklog = 5;
+				int framesRead = 0;
+				do 
+				{
+					if (framesRead > 0) {
+						// signal the AV-sync that we processed a frame
+						movie.onUpdatedVideoFrame();
+					}
+
+					// grab the next frame from the video stream
+					textureBuffer = movie.videoStream().readFrameInto(textureBuffer);
+
+					if (textureBuffer == null) {
+						break outer;
+					}
+					framesRead++;
+				} while (movie.hasVideoBacklogOver(maxFramesBacklog));
+
+				if (framesRead > 1) {
+					System.out.println("video frames skipped: " + (framesRead - 1));
+				}
+				glTexSubImage2D(GL_TEXTURE_2D, 0/* level */, 0, 0, movie.width(), movie.height(), GL_RGB, GL_UNSIGNED_BYTE, textureBuffer);
+				// signal the AV-sync that we processed a frame
+				movie.onUpdatedVideoFrame();
+			}
+			if(audioRenderer.getState() == State.CLOSED)
+			{
+				stopMovie();
+			}
+		}
+		
 		ShaderUtils.useProgram(shader_id);
 		{
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, game.playing ? game_id : gui_id);
+			if(movie != null)
+			{
+				GL11.glBindTexture(GL11.GL_TEXTURE_2D, movieTextureID);
+			}
 			// Bind to the VAO that has all the information about the vertices
 			GL30.glBindVertexArray(vaoId);
 			{
@@ -107,6 +242,7 @@ public class Wardos
 				GL20.glDisableVertexAttribArray(1);
 			}
 			GL30.glBindVertexArray(0);
+			renderGUI();
 		}
 		ShaderUtils.useProgram(0);
 		
@@ -114,6 +250,15 @@ public class Wardos
 		//font.drawStringRightAdjusted(1024, 0, "Coord: " + game.getPlayer().getPos().toString(), 0f, 0.5f, 0f, 175/255f);
 		GL11.glEnable(GL11.GL_DEPTH_TEST);
 		GL11.glEnable(GL11.GL_CULL_FACE);
+	}
+
+	private void renderGUI()
+	{
+		if(game.playing)
+		{
+			//for()
+		}
+		
 	}
 
 	public void setupQuad() 
@@ -183,5 +328,14 @@ public class Wardos
 	public void command(String s)
 	{
 		
+	}
+
+	public boolean isPlayingMovie()
+	{
+		if(movie != null)
+		{
+			return audioRenderer.getState() == State.PLAYING;
+		}
+		return false;
 	}
 }

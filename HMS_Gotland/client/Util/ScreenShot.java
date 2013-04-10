@@ -44,8 +44,8 @@ class ScreenShotSaveThread extends Thread
 	@Override
 	public void run()
 	{
-		File file = new File(OSUtil.getSavePath() + "screenshots"  + File.separator
-				+ time(folder_date) + File.separator + "screenshot_" + time(file_time) + ".png");
+		File file = new File(System.getProperty("user.home") + File.separator + "pictures" + File.separator + "screenshots"
+			+ File.separator + time(folder_date) + File.separator + "screenshot_" + time(file_time) + ".png");
 		if(!file.getParentFile().exists())
 		{
 			file.getParentFile().mkdirs();

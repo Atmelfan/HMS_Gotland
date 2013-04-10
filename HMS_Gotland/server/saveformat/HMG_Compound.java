@@ -3,7 +3,9 @@ package saveformat;
 import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 public class HMG_Compound extends HMG_Basic
 {
@@ -13,11 +15,6 @@ public class HMG_Compound extends HMG_Basic
 	
 	public HMG_Compound()
 	{
-	}
-	
-	public HMG_Compound(String string)
-	{
-		name = string;
 	}
 
 	//Get/set for integer
@@ -84,17 +81,38 @@ public class HMG_Compound extends HMG_Basic
 	}
 	
 	//Get/set for list
-	public void setList(String s, HMG_Compound i)
+	public void setCompound(String s, HMG_Compound i)
 	{
+		i.name = s;
 		data.put(s, i);
 	}
 	
-	public HMG_Compound getList(String s)
+	public HMG_Compound getCompound(String s)
 	{
 		HMG_Basic tag = data.get(s);
 		if(tag instanceof HMG_Compound)
 		{
 			return (HMG_Compound)tag;
+		}else
+		{
+			return null;
+		}
+	}
+	
+	public void setList(String s, List<HMG_Basic> i)
+	{
+		HMG_List list = new HMG_List();
+		list.stuff = i;
+		list.name = s;
+		data.put(s, list);
+	}
+	
+	public List<HMG_Basic> getList(String s)
+	{
+		HMG_Basic tag = data.get(s);
+		if(tag instanceof HMG_List)
+		{
+			return ((HMG_List) tag).stuff;
 		}else
 		{
 			return null;

@@ -1,5 +1,6 @@
 package hms_gotland_server;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.HashMap;
 import javax.vecmath.Vector3f;
@@ -25,12 +26,10 @@ public class HMS_Gotland_Server extends Thread
 	
 	public static void main(String[] args)
 	{
-		if(args.length >= 2)
+		File level = new File(args[0]);
+		if(args.length >= 3)
 		{
-			server = new HMS_Gotland_Server(false, Integer.parseInt(args[0]), Integer.parseInt(args[1]));
-		}else
-		{
-			server = new HMS_Gotland_Server(false, 4321, 4322);
+			server = new HMS_Gotland_Server(level, false, Integer.parseInt(args[1]), Integer.parseInt(args[2]));
 		}
 		server.start();
 	}
@@ -39,7 +38,7 @@ public class HMS_Gotland_Server extends Thread
 	 * Starts a server on TCP port and UDP port
 	 * @param port
 	 */
-	public HMS_Gotland_Server(boolean integrated, int tcpport, int udpport)
+	public HMS_Gotland_Server(File dir, boolean b, int tcpport, int udpport)
 	{
 		super("HMS_Gotland_Server");
 		this.integrated = integrated;
@@ -48,7 +47,7 @@ public class HMS_Gotland_Server extends Thread
 			//
 		}
 		lastTick = System.currentTimeMillis();
-		level = new Level("test", this);
+		level = new Level(this, dir);
 		kryoServer = new Server();
 		Packet.registerPackets(kryoServer.getKryo());
 		kryoServer.addListener(listener);
@@ -139,6 +138,13 @@ public class HMS_Gotland_Server extends Thread
 					connection.sendTCP(new Packet.AcceptLogin(Entity.entityIDs++, level.getPlayerPos(), level.modelName));
 					System.out.println((integrated ? "Server: " : "") + name + " logged in.");
 				}
+			}
+			if(object instanceof Packet.ReqInfo)
+			{
+				Packet.Info re = new Packet.Info();
+				re.stat = "Online";
+				re.desc = "A server";
+				
 			}
 			super.received(connection, object);
 		}

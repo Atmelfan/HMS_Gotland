@@ -1,4 +1,6 @@
 package hms_gotland_server;
+import java.util.ArrayList;
+
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
 import level.Entity;
@@ -18,6 +20,9 @@ public class Packet
 		kryo.register(Login.class);
 		kryo.register(AcceptLogin.class);
 		kryo.register(Message.class);
+		kryo.register(Info.class);
+		kryo.register(ReqInfo.class);
+		kryo.register(Dependency.class);
 		kryo.register(CreateEntity.class);
 		kryo.register(PositionEntity.class);
 		kryo.register(AngleEntity.class);
@@ -55,6 +60,28 @@ public class Packet
 			playerPos = playerposi;
 			levelName = levelData;
 		}
+	}
+	
+	public static class Dependency extends Packet
+	{
+		public static final int MODEL = 1;
+		public static final int ENVIROMENT = 2;
+		public String url;//Tex gpa-robotics.com/blablabla.md3
+		public String name;//Tex models/blablabla.md3
+		public byte[] checksum;
+		public int type = 0;
+	}
+	
+	public static class Info extends Packet
+	{
+		public String desc;
+		public String stat;
+		public boolean hasDependecies;
+		public Dependency[] dependencies;
+	}
+	
+	public static class ReqInfo extends Packet
+	{
 	}
 	
 	public static class Message extends Packet

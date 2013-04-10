@@ -6,6 +6,7 @@ package hms_gotland_client;
 
 import java.nio.FloatBuffer;
 
+import level.ClientEntity;
 import level.ClientPlayer;
 import level.Entity;
 
@@ -27,15 +28,16 @@ public class Camera
 	public boolean thirdPerson = true;
 	public float thirdPersonRadius = 3F;
 	
-	public ClientPlayer owner;
+	public ClientEntity owner;
 	
 	public Vector3f pos = new Vector3f(0, 0, 0);
 	
 	private Matrix4f projectionMatrix;// view matrix
 	private Matrix4f viewMatrix;// projection matrix
 	public float yaw = 0;
-	public float pitch = 180;
-	public float roll;
+	public float pitch = 0;
+	public float roll = 0;
+	
 	private float[] matrix = new float[16];
 	
 	public Camera(float width, float height, float near, float far)
@@ -48,29 +50,26 @@ public class Camera
 	public void update()
 	{
 		viewMatrix = new Matrix4f();
-		
-		if(thirdPerson)
+		if(thirdPerson && owner != null)
 		{
-			viewMatrix.translate(new Vector3f(0F, 0F, -thirdPersonRadius));
+			viewMatrix.translate(new Vector3f(0F, 0F, -owner.rayTrace(6f, yaw, pitch)));
 		}
 		viewMatrix.rotate((float) Math.toRadians(pitch), new Vector3f(1, 0, 0));
-		viewMatrix.rotate((float) Math.toRadians(yaw), new Vector3f(0, 1, 0));
-		viewMatrix.rotate((float) Math.toRadians(180), new Vector3f(0, 0, 1));
+		viewMatrix.rotate((float) Math.toRadians(180 + yaw), new Vector3f(0, 1, 0));
+		//viewMatrix.rotate((float) Math.toRadians(180), new Vector3f(0, 0, 1));
 		
 		if(owner != null)
 		{
-			Matrix4f v = GLUtil.lwjglMatrix(owner.getModelMatrix());
-			v.invert();
-			Matrix4f.mul(viewMatrix, v, viewMatrix);
-			
-			//viewMatrix.load(GLUtil.buffer(owner.getOpenGLMatrix()));
+			//Matrix4f v = GLUtil.lwjglMatrix(owner.getModelMatrix());
+			//v.invert();
+			//Matrix4f.mul(viewMatrix, v, viewMatrix);
+			Vector3f o = VectorUtil.toLWJGLVector(owner.getPos());
+			o.negate();
+			viewMatrix.translate(o, viewMatrix);
 		}else
 		{
 			viewMatrix.translate(pos);
 		}
-		
-		
-		
 		
 		Matrix4f v = new Matrix4f();
 		Matrix4f.mul(projectionMatrix, viewMatrix, v);
@@ -159,7 +158,7 @@ public class Camera
 	/**
 	 * @return the owner
 	 */
-	public ClientPlayer getOwner()
+	public ClientEntity getOwner()
 	{
 		return owner;
 	}

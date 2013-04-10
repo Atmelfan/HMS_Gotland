@@ -12,12 +12,19 @@ import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.HashMap;
 
+import javax.vecmath.Vector3f;
+
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
+
+import com.bulletphysics.collision.shapes.CollisionShape;
+import com.bulletphysics.collision.shapes.ConvexHullShape;
+import com.bulletphysics.collision.shapes.ShapeHull;
+import com.bulletphysics.util.ObjectArrayList;
 
 import Util.GLUtil;
 import Util.ShaderUtils;
@@ -55,8 +62,9 @@ public class ModelObj extends Model
 	private static int fsId;
 	private static int shader_id;
 	
-	public ModelObj(File file, boolean clearVertexData)
+	public ModelObj(RenderEngine rend, File file)
 	{
+		super(rend, file);
 		//System.out.println("OBJ:Loading " + file.getName());
 		read(file);
 		centerit();
@@ -67,7 +75,7 @@ public class ModelObj extends Model
 		}
 		cleanup();
 	}
-
+	
 	private void cleanup() 
 	{
 		vertexsets.clear();
@@ -98,8 +106,7 @@ public class ModelObj extends Model
 	
 	private void read(File file) {
 		int linecounter = 0;
-		FaceGroup currentGroup = new FaceGroup("default");
-		mtllibs.put(currentGroup.name, currentGroup);
+		FaceGroup currentGroup = null;
 		try 
 		{
 			BufferedReader br = new BufferedReader(new FileReader(file));
@@ -211,6 +218,8 @@ public class ModelObj extends Model
 								vn[i-1] = 0;
 							}
 						}
+						if(currentGroup == null)
+							continue;
 						currentGroup.faces.add(v);
 						currentGroup.facestexs.add(vt);
 						currentGroup.facesnorms.add(vn);
@@ -237,12 +246,6 @@ public class ModelObj extends Model
 	{
 		for(FaceGroup group : mtllibs.values())
 		{
-			//System.out.println("ModelObj: Compiling face group - " + group.name);
-			if(group.isEmpty())
-			{
-				mtllibs.remove(group);
-				continue;
-			}
 			//Compile openGL vbo
 			group.compileVBO();
 			group.clear();
@@ -252,6 +255,8 @@ public class ModelObj extends Model
 	private HashMap<String, FaceGroup> mtllibs = new HashMap<>();
 	private int vpMatrixPos;
 	private int mdMatrixPos;
+	private Object engine;
+	private int timePos;
 	private void loadMTL(String string, File f)
 	{
 		File mtllib = new File(f, string);
@@ -281,7 +286,7 @@ public class ModelObj extends Model
 						{
 							if(mtl.length > 1)
 							{
-								currentMtl.texture_id = GLUtil.loadPNGTexture(f.getAbsolutePath() + File.separator + mtl[1], GL13.GL_TEXTURE0);
+								currentMtl.texture_id = renderer.getTexture(f.getAbsolutePath() + File.separator + mtl[1], GL13.GL_TEXTURE0);
 								//System.out.println(currentMtl.name + " map_Kd " + mtl[1]);
 							}
 						}
@@ -351,27 +356,36 @@ public class ModelObj extends Model
 		//TODO fix ugly quick hacked OpenGL code
 		ShaderUtils.useProgram(shader_id);
 		{
+			ShaderUtils.setUniformVar(shader_id, "time", engine.getPartTick() / 3);
 			GL20.glUniformMatrix4(vpMatrixPos, false, GLUtil.bufferMatrix(vpMatrix));
-			GL20.glUniformMatrix4(vpMatrixPos, false, GLUtil.bufferMatrix(matrix));
-			ShaderUtils.setUniformMatrix4(shader_id, "viewprojMatrix", vpMatrix);
-			ShaderUtils.setUniformMatrix4(shader_id, "modelMatrix", matrix);
+			GL20.glUniformMatrix4(mdMatrixPos, false, GLUtil.bufferMatrix(matrix));
 			
 			for (FaceGroup g : mtllibs.values())
 			{
-				
-				
 				g.drawArray();
 			}
-			GL30.glBindVertexArray(0);
 			
 		}
 		ShaderUtils.useProgram(0);
+		GLUtil.cerror("draw");
 	}
 	
 	@Override
 	public void destroy()
 	{
 		//TODO
+	}
+	
+	private ObjectArrayList<Vector3f> vertexes = new ObjectArrayList<>();
+	
+	@Override
+	public CollisionShape body()
+	{
+		ConvexHullShape hulls = new ConvexHullShape(vertexes);
+		ShapeHull hull = new ShapeHull(hulls);
+		hull.buildHull(hulls.getMargin());
+		return new ConvexHullShape(hull.getVertexPointer());
+		
 	}
 	
 	/**
@@ -402,8 +416,8 @@ public class ModelObj extends Model
 
 		public void compileVBO()
 		{
-			ArrayList<VertexData> data = new ArrayList<>();
 			//Assemble face indice
+			ByteBuffer verticesByteBuffer = BufferUtils.createByteBuffer(faces.size() * 3 * VertexData.stride);	
 			for (int i = 0; i < faces.size(); i++)
 			{
 				int[] tempfaces = faces.get(i);
@@ -412,35 +426,31 @@ public class ModelObj extends Model
 				
 				for (int w = 0; w < tempfaces.length; w++)
 				{
-					VertexData newv = new VertexData();
 					////////Vertex////////
-					newv.setXYZ(vertexsets.get(tempfaces[w] - 1)[0], vertexsets.get(tempfaces[w] - 1)[1], vertexsets.get(tempfaces[w] - 1)[2]);
-					
+					verticesByteBuffer.putFloat(vertexsets.get(tempfaces[w] - 1)[0]);
+					verticesByteBuffer.putFloat(vertexsets.get(tempfaces[w] - 1)[1]);
+					verticesByteBuffer.putFloat(vertexsets.get(tempfaces[w] - 1)[2]);
+					vertexes.add(new Vector3f(vertexsets.get(tempfaces[w] - 1)));
 				    ////////Texture coords////////
 					if(tempfacestexs[w] < vertexsetstexs.size())
 					{
-						newv.setST(vertexsetstexs.get(tempfacestexs[w] - 1)[0], 1f - vertexsetstexs.get(tempfacestexs[w] - 1)[1]);
+						verticesByteBuffer.putFloat(vertexsetstexs.get(tempfacestexs[w] - 1)[0]);
+						verticesByteBuffer.putFloat(1f - vertexsetstexs.get(tempfacestexs[w] - 1)[1]);
 					}
 					
 				    ////////Normals////////
 					if(tempfacesnorms[w] < vertexsetsnorms.size())
 					{
-						newv.setNormal(vertexsetsnorms.get(tempfacesnorms[w] - 1)[0], vertexsetsnorms.get(tempfacesnorms[w] - 1)[0], vertexsetsnorms.get(tempfacesnorms[w] - 1)[0]);
+						verticesByteBuffer.putFloat(vertexsetsnorms.get(tempfacesnorms[w] - 1)[0]);
+						verticesByteBuffer.putFloat(vertexsetsnorms.get(tempfacesnorms[w] - 1)[1]);
+						verticesByteBuffer.putFloat(vertexsetsnorms.get(tempfacesnorms[w] - 1)[2]);
 					}
-					data.add(newv);
 					numVerts++;
 				}
 				numpolys++;
 			}
 			
-			// Put each 'Vertex' in one FloatBuffer
-			ByteBuffer verticesByteBuffer = BufferUtils.createByteBuffer(data.size() * VertexData.stride);				
-			FloatBuffer verticesFloatBuffer = verticesByteBuffer.asFloatBuffer();
-			for (int i = 0; i < data.size(); i++) {
-				// Add position, color and texture floats to the buffer
-				verticesFloatBuffer.put(data.get(i).getElements());
-			}
-			verticesFloatBuffer.flip();
+			verticesByteBuffer.flip();
 			
 			// Create a new Vertex Array Object in memory and select it (bind)
 			vaoId = GL30.glGenVertexArrays();
@@ -450,15 +460,14 @@ public class ModelObj extends Model
 				vboId = GL15.glGenBuffers();
 				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vboId);
 				{
-					GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesFloatBuffer, GL15.GL_STATIC_DRAW);
+					GL15.glBufferData(GL15.GL_ARRAY_BUFFER, verticesByteBuffer, GL15.GL_STATIC_DRAW);
 					// Put the position coordinates in attribute list 0
-					GL20.glVertexAttribPointer(0, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
+					GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 32, 0);
 					// Put the color components in attribute list 1
-					GL20.glVertexAttribPointer(1, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
+					GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 32, 12);
 					// Put the texture coordinates in attribute list 2
-					GL20.glVertexAttribPointer(2, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
+					GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, 32, 20);
 				}
-				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 				//Enable the attrib arrays
 				GL20.glEnableVertexAttribArray(0);
 				GL20.glEnableVertexAttribArray(1);
@@ -488,6 +497,15 @@ public class ModelObj extends Model
 		{
 			return faces.size() == 0;
 		}
+
+		@Override
+		public String toString()
+		{
+			return "FaceGroup [name=" + name + ", vaoId=" + vaoId + ", vboId="
+					+ vboId + ", numVerts=" + numVerts + ", textureID=" + texture_id + "]";
+		}
+		
+		
 	}
 }
 

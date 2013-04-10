@@ -52,8 +52,9 @@ public class ModelMD2 extends Model
 	private static int vsId = 0;
 	private static int fsId = 0;
 	
-	public ModelMD2(File file, boolean b)
+	public ModelMD2(RenderEngine rend, File file)
 	{
+		super(rend, file);
 		//Read MD2 data file
 		read(file);
 		//Print MD2 info
@@ -107,16 +108,6 @@ public class ModelMD2 extends Model
 		GL30.glDeleteVertexArrays(vao_id);
 		GL11.glDeleteTextures(tex_id);
 	}
-
-	public void drawCEL(float frame, float[] vpMatrix, float[] matrix, RenderEngine engine)
-	{
-		GL11.glPolygonMode(GL11.GL_BACK, GL11.GL_LINE);
-		GL11.glCullFace(GL11.GL_FRONT); 
-		draw(frame, vpMatrix, matrix, engine);
-		GL11.glPolygonMode(GL11.GL_BACK, GL11.GL_FILL);
-		GL11.glCullFace(GL11.GL_BACK);
-		draw(frame, vpMatrix, matrix, engine);
-	}
 	
 	@Override
 	public void draw(float frame, float[] vpMatrix, float[] matrix, RenderEngine engine)
@@ -137,7 +128,7 @@ public class ModelMD2 extends Model
 			ShaderUtils.setUniformMatrix4(shader_id, "viewprojMatrix", vpMatrix);
 			ShaderUtils.setUniformMatrix4(shader_id, "modelMatrix", matrix);
 			ShaderUtils.setUniformVar(shader_id, "frame_interpolated", (float)(frame - Math.floor(frame)));
-			ShaderUtils.setUniformVar(shader_id, "cameraDir", engine.camera.yaw, engine.camera.pitch, engine.camera.roll);
+			//ShaderUtils.setUniformVar(shader_id, "cameraDir", engine.camera.yaw, engine.camera.pitch, engine.camera.roll);
 			//Bind frames to VAO
 			GL30.glBindVertexArray(vao_id);
 			{
@@ -385,7 +376,7 @@ public class ModelMD2 extends Model
 			}
 			name = new String(temp);
 			
-			tex_id = GLUtil.loadPNGTexture(name, GL13.GL_TEXTURE0);
+			tex_id = renderer.getTexture(name, GL13.GL_TEXTURE0);
 			return this;
 		}
 	}

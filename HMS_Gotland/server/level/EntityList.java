@@ -27,7 +27,6 @@ public class EntityList
 	
 	static
 	{
-		entities.put("default", Entity.class);
-		entities.put("war", EntityWAR.class);
+		entities.put("entity", Entity.class);
 	}
 }

@@ -1,0 +1,59 @@
+//##########Single player##########
+//Level file for the integrated
+//server in singleplayer game.
+//##########Single player##########
+//Level name and description
+&name test_level
+&description {
+	Singleplayer campaign
+}
+
+&obj generic://enviroments/Island/island.obj
+
+&player pos 0 10 0
+
+/*
+&player {
+	&mdl generic://models/lara/Lara_Croft.obj
+	&ani generic://models/lara/animation.anim
+	&pos 0 10 0
+}
+
+&entity robot {
+	&mdl generic://models/lara/Lara_Croft.obj
+	&ani generic://models/lara/animation.anim
+	&ai attack cover flee
+}
+
+&object computer {
+	&mdl generic://models/computer.obj
+	&phy box 0.125 0.125 0.125
+}
+
+&entities {
+	robot 0 10 0
+	robot 0 12 0
+}
+
+&objects {
+	computer 0 10 0
+}
+
+&vehicle {
+	&body generic://models/computer.obj
+	&wheel front 1.25 0 1.25 generic://models/computer.obj
+	&wheel front 1.25 0 -1.25 generic://models/computer.obj
+	&wheel back -1.25 0 1.25 generic://models/computer.obj
+	&wheel back -1.25 0 -1.25 generic://models/computer.obj
+}
+
+//Any dependencies (models, textures etc) not available in client Resources/assets/
+&dependencies {
+	model blablabla.md3 gpa-robotics.com/blablabla.md3
+	enviroment island.obj gpa-robotics.com/island.obj
+}
+
+&pathpoints {
+	
+}
+*/

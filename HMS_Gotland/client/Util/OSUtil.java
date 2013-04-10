@@ -1,9 +1,16 @@
 package Util;
 
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.nio.ByteBuffer;
+import java.nio.channels.FileChannel;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
 
 public class OSUtil 
 {
@@ -12,22 +19,14 @@ public class OSUtil
 	{
 		String os = System.getProperty("os.name").toLowerCase();
 		
-		//Tested platform.
 		if(os.contains("win"))
 		{
 			return "windows";
 		}
-		//Tested platform.
-		if(os.contains("linux") || os.contains("unix"))
+		if(os.contains("ux") || os.contains("ix"))
 		{
 			return "linux";
 		}
-		//Untested platform!
-		if(os.contains("solaris") || os.contains("sunos"))
-		{
-			return "solaris";
-		}
-		//Untested platform!
 		if(os.contains("mac"))
 		{
 			return "macosx";
@@ -36,35 +35,74 @@ public class OSUtil
 		return "unknown";	
 	}
 	
-	public static String getSavePath()
+	public static SimpleDateFormat dateFormat = new SimpleDateFormat("YY-MM-dd/HH.mm.ss");
+	public static String getTime()
 	{
-		return System.getProperty("user.home") + File.separator + ".hms_gotland" + File.separator;
+		Calendar cal = Calendar.getInstance();
+    	cal.getTime();
+    	return dateFormat.format(cal.getTime());
 	}
 	
-	public static String getSessionRequestHash(String username) throws UnsupportedEncodingException
-	{
-		MessageDigest md = null;
-	    try {
-	        md = MessageDigest.getInstance("SHA-1");
+	public static byte[] generateMD5(FileInputStream inputStream){
+	    if(inputStream==null){
+
+	        return null;
 	    }
-	    catch(NoSuchAlgorithmException e) {
-	        e.printStackTrace();
+	    MessageDigest md;
+	    try {
+	        md = MessageDigest.getInstance("MD5");
+	        FileChannel channel = inputStream.getChannel();
+	        ByteBuffer buff = ByteBuffer.allocate(2048);
+	        while(channel.read(buff) != -1)
+	        {
+	            buff.flip();
+	            md.update(buff);
+	            buff.clear();
+	        }
+	        return md.digest();
+	    }
+	    catch (NoSuchAlgorithmException e)
+	    {
+	        return null;
 	    } 
-	    return new String(md.digest(username.getBytes("UTF-8")));
+	    catch (IOException e) 
+	    {
+	        return null;
+	    }
+	    finally
+	    {
+	        try {
+	            if(inputStream!=null)inputStream.close();
+	        } catch (IOException e) {
+
+	        }
+	    } 
 	}
 	
-	public static String getSessionLoginHash(int sessionID, String username, String password) throws UnsupportedEncodingException
+	public static void copyFile(File sourceFile, File destFile) throws IOException 
 	{
-		MessageDigest md = null;
-	    try {
-	        md = MessageDigest.getInstance("SHA-1");
-	    }
-	    catch(NoSuchAlgorithmException e) {
-	        e.printStackTrace();
-	    }
-	    byte[] t = md.digest(
-	    		(new String(md.digest(username.getBytes("UTF-8"))) + new String(md.digest(password.getBytes("UTF-8")))).getBytes("UTF-8")
-	    		);
-	    return new String(t);
+		 if(!destFile.exists()) 
+		 {
+			 destFile.createNewFile();
+		 }
+		 
+		 FileChannel source = null;
+		 FileChannel destination = null;
+		 try 
+		 {
+			 source = new FileInputStream(sourceFile).getChannel();
+			 destination = new FileOutputStream(destFile).getChannel();
+		  	 destination.transferFrom(source, 0, source.size());
+		 }
+		 finally 
+		 {
+			 if(source != null) {
+				 source.close();
+			 }
+			 if(destination != null) 
+			 {
+				 destination.close();
+			 }
+		}
 	}
 }

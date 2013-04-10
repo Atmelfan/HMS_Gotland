@@ -1,12 +1,24 @@
 package model;
 
-import org.lwjgl.opengl.GL11;
+import java.io.File;
+
+import javax.vecmath.Vector3f;
+
+import com.bulletphysics.collision.shapes.BoxShape;
+import com.bulletphysics.collision.shapes.CapsuleShape;
+import com.bulletphysics.collision.shapes.CollisionShape;
 
 import hms_gotland_client.RenderEngine;
 
 public class Model
-{
-	public void draw(float frame, float[] vpMatrix, float[] modelMatrix, RenderEngine engine)
+{	
+	protected RenderEngine renderer;
+	public Model(RenderEngine rend, File resource)
+	{
+		renderer = rend;
+	}
+	
+	public void draw(float frame, float[] vpMatrix, float[] mdMatrix, RenderEngine engine)
 	{
 	}
 	
@@ -24,7 +36,7 @@ public class Model
 		return 1;
 	}
 	
-	public float getZDepth() 
+	public float getZDepth()
 	{
 		return 1;
 	}
@@ -35,7 +47,9 @@ public class Model
 		return false;
 	}
 
-	public void drawCEL(int frame, float[] vpMatrix, float[] modelMatrix, RenderEngine engine)
-	{
+	public CollisionShape body()
+	{	
+		float width = (float) Math.sqrt(getXWidth() * getXWidth() + getZDepth() * getZDepth());
+		return new CapsuleShape(width / 2, getYHeight());
 	}
 }

@@ -1,0 +1,7 @@
+Model of small barren island. Provided for educational purpose.
+Free to use in commercial or hobby projects.
+
+Shore waves can be animated. Fake volumetric water. Lighting provided as seen in previews.
+Island has normal map. Madein 3D Studio Max 9.0.
+
+leonardkrylov@gmail.com

@@ -3,20 +3,15 @@ package level;
 import hms_gotland_client.HMS_Gotland;
 import hms_gotland_client.RenderEngine;
 
-import java.io.File;
 import java.util.ArrayList;
 
 import javax.vecmath.Vector3f;
 
-import org.lwjgl.Sys;
-
-import level.Entity;
-import level.EntityPlayer;
-import level.Level.BulletHole;
 import model.Model;
 import model.ModelObj;
 
 import com.bulletphysics.collision.broadphase.AxisSweep3;
+import com.bulletphysics.collision.broadphase.CollisionFilterGroups;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
@@ -29,9 +24,8 @@ import com.bulletphysics.linearmath.Transform;
 public class ClientLevel
 {
 	public ArrayList<ClientEntity> entities = new ArrayList<>();
-	public ArrayList<BulletHole> bulletHoles = new ArrayList<>();
 	
-	private DiscreteDynamicsWorld level;
+	private DiscreteDynamicsWorld world;
 	private Model model;
 	private RigidBody levelbody;
 	public RenderEngine renderEngine;
@@ -41,9 +35,11 @@ public class ClientLevel
 	private int playerID;
 	private Vector3f playerOriginPos;
 	private String mesh;
+	private HMS_Gotland game;
 	
 	public ClientLevel(HMS_Gotland gotland)
 	{
+		game = gotland;
 		renderEngine = gotland.renderEngine;
 		setupWorld();
 	}
@@ -57,21 +53,22 @@ public class ClientLevel
 		AxisSweep3 overlappingPairCache = new AxisSweep3(worldAabbMin, worldAabbMax);
 		SequentialImpulseConstraintSolver solver = new SequentialImpulseConstraintSolver();
 		 
-		level = new DiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration);
-		level.setGravity(new Vector3f(0F, -9.82F, 0F));
-		level.getDispatchInfo().allowedCcdPenetration = 0.1f;
+		setWorld(new DiscreteDynamicsWorld(dispatcher, overlappingPairCache, solver, collisionConfiguration));
+		getWorld().setGravity(new Vector3f(0F, -9.82F, 0F));
+		getWorld().getDispatchInfo().allowedCcdPenetration = 0.1f;
+		
 	}
 	
 	public void addEntity(ClientEntity entity)
 	{
 		entities.add(entity);
-		level.addRigidBody(entity.body);
+		getWorld().addRigidBody(entity.body);
 	}
 	
 	public void removeEntity(ClientEntity entity)
 	{
 		entities.remove(entity);
-		level.removeRigidBody(entity.body);
+		getWorld().removeRigidBody(entity.body);
 	}
 	
 	public void draw()
@@ -98,27 +95,35 @@ public class ClientLevel
 	{	
 		if(mesh != null && levelbody == null)
 		{
-			model = new ModelObj(new File(mesh), true);
-			levelbody = new LevelCollisionShape(new File(mesh), true).body();
-			level.addRigidBody(levelbody);
+			model = new ModelObj(renderEngine, renderEngine.resources.getResource(mesh));
+			levelbody = new LevelCollisionShape(renderEngine.resources.getResource(mesh), true).body();
+			getWorld().addRigidBody(levelbody);
 			createPlayer(playerID, playerOriginPos);
 			System.out.println("Created level at " + levelbody.getWorldTransform(new Transform()).origin + 
 					", player at " + playerOriginPos);
 		}
-		level.stepSimulation(1/60F);
+		for (int i = 0; i < entities.size(); i++)
+		{
+			ClientEntity entity = entities.get(i);
+			entity.tick();
+		}
+		getWorld().stepSimulation(1/60F);
 	}
 
 	public void destroy()
 	{
-		level.destroy();
+		getWorld().destroy();
 	}
 
 	public void createPlayer(int playerID, Vector3f playerPos)
 	{
-		player = new ClientPlayer(this, "lara/Lara_Croft.obj", playerID);
+		player = new ClientPlayer(this, "generic://models/lara/Lara_Croft.obj", playerID);
 		player.setPos(playerPos);
 		renderEngine.camera.setOwner(player);
-		addEntity(player);
+		entities.add(player);
+		getWorld().addCollisionObject(player.getGhostObject(), CollisionFilterGroups.CHARACTER_FILTER, (short)(CollisionFilterGroups.STATIC_FILTER | CollisionFilterGroups.DEFAULT_FILTER));
+
+		getWorld().addAction(player.getCharacter());
 	}
 
 	public void setPlayerAndLevel(int playerid, Vector3f playerPos, String levelName)
@@ -126,6 +131,29 @@ public class ClientLevel
 		playerID = playerid;
 		playerOriginPos = playerPos;
 		mesh = levelName;
+		System.out.println(mesh);
+	}
+
+	public AxisSweep3 getAxisSweep()
+	{
+		// TODO Auto-generated method stub
+		return (AxisSweep3)getWorld().getBroadphase();
+	}
+
+	/**
+	 * @return the world
+	 */
+	public DiscreteDynamicsWorld getWorld()
+	{
+		return world;
+	}
+
+	/**
+	 * @param world the world to set
+	 */
+	public void setWorld(DiscreteDynamicsWorld world)
+	{
+		this.world = world;
 	}
 
 }

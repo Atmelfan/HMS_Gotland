@@ -11,6 +11,7 @@ import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import javax.vecmath.Vector3f;
 
@@ -37,12 +38,10 @@ import model.ModelPool;
 
 public class Level
 {
-	private static String DEFAULT_LEVEL_PATH = "Resources/levels/";
 	
 	private File levelFile;
-	
 	public ArrayList<Entity> entities = new ArrayList<>();
-	
+	public HashMap<String, String> dependencies = new HashMap<>();
 	public String name;
 	
 	//Physics
@@ -57,14 +56,13 @@ public class Level
 
 	public String modelName;
 	
-	public Level(String name, HMS_Gotland_Server hms_Gotland_Server)
+	public Level(HMS_Gotland_Server hms_Gotland_Server, File level)
 	{
 		game = hms_Gotland_Server;
-		modelpool = new ModelPool();
 		//Setup bullet world
 		setupWorld();
 		//Read level save file
-		levelFile = new File(DEFAULT_LEVEL_PATH + name);
+		levelFile = level;
 		try
 		{
 			parseLevelFile(levelFile);
@@ -129,57 +127,45 @@ public class Level
 	
 	private void parseLevelFile(File file) throws IOException
 	{
-		System.out.println("Loading level...");
 		BufferedReader reader;
 		reader = new BufferedReader(new FileReader(new File(file, "level.lvl")));
 		try
 		{
 			String line = "";
 			int lineCount = 0;
-			
+			boolean comment = false;
 			while((line = reader.readLine()) != null)
 			{
 				lineCount++;
 				line = line.toLowerCase().trim();
+				if(line.startsWith("*/"))
+				{
+					comment = false;
+				}
+				if(comment) continue;
 				
-				if(line.startsWith("&entity"))
+				if(line.startsWith("/*"))
+				{
+					comment = true;
+				}
+				else if(line.startsWith("&entity"))
 				{
 					String[] lines = line.split(" ");
-					if(lines.length >= 3)
+					//TODO		
+				}
+				else if(line.startsWith("&dependencies") && line.endsWith("{"))
+				{
+					line = reader.readLine().toLowerCase().trim();
+					while(line != null && !line.equals("}"))
 					{
-						Entity e = EntityList.getEntity(lines[1], this);
-						if(e != null)
+						String[] lines = line.split("\\s+");
+						if(lines.length > 1)
 						{
-							if(line.endsWith("{"))
-							{
-								
-								String tag;
-								while((tag = reader.readLine()) != null)
-								{
-									tag = tag.trim();
-									
-									if(tag.startsWith("}")) break;
-									e.processTag(tag);
-								}
-							}
-							if(e.getBody() != null)
-							{
-								addEntity(e);
-							}else
-							{
-								System.err.println("No collision size in &entity command @line " + lineCount);
-							}
-							
-						}else
-						{
-							System.err.println("Invalid entity in &entity command @line " + lineCount);
+							dependencies.put(lines[0], lines[1]);
 						}
-					}else
-					{
-						System.err.println("Invalid &entity command @line " + lineCount);
 					}
 				}
-				if(line.startsWith("&player"))
+				else if(line.startsWith("&player"))
 				{
 					String[] lines = line.split(" ");
 					if(lines.length > 4 && lines[1].equalsIgnoreCase("pos"))
@@ -190,7 +176,7 @@ public class Level
 						throw new LevelException(file.getName(), "Invalid &player command", lineCount);
 					}
 				}
-				if(line.startsWith("&name"))
+				else if(line.startsWith("&name"))
 				{
 					String[] lines = line.split(" ");
 					if(lines.length > 1)
@@ -201,13 +187,14 @@ public class Level
 						throw new LevelException(file.getName(), "Invalid &name command", lineCount);
 					}
 				}
-				if(line.startsWith("&obj"))
+				else if(line.startsWith("&obj"))
 				{
 					String[] lines = line.split(" ");
 					if(lines.length > 1)
 					{
 						modelName = lines[1];
-						model = new LevelCollisionShape(new File(lines[1]), false);
+						String n = lines[1].replace("server://", "Level/").replace("generic://", "Resources/assets/");
+						model = new LevelCollisionShape(new File(n), false);
 						levelbody = model.body();
 					}else
 					{
@@ -237,24 +224,6 @@ public class Level
 	public void destroy()
 	{
 		level.destroy();
-	}
-
-	public void reloadLevel()
-	{
-		try
-		{
-			parseLevelFile(levelFile);
-		} catch (IOException e)
-		{
-			System.err.println("Level.reloadLevel()" + e.getMessage());
-		}
-	}
-	
-	//BulletHole struct
-	public class BulletHole
-	{
-		Vector3f position;
-		Vector3f normal;
 	}
 
 	public Vector3f getPlayerPos()

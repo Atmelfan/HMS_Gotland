@@ -4,7 +4,7 @@ import java.io.DataInputStream;
 import java.io.DataOutputStream;
 import java.io.IOException;
 
-abstract class HMG_Basic
+public abstract class HMG_Basic
 {
 	public String name;
 	

@@ -25,7 +25,7 @@ public class HMG_List extends HMG_Basic
 				stuff.add(tag);
 			} catch (InstantiationException | IllegalAccessException e)
 			{
-				System.err.println("Skipped invalid tag in save file!");
+				System.err.println("Skipped invalid tag in save file! Following data might be corrupted.");
 				e.printStackTrace();
 			}
 		}

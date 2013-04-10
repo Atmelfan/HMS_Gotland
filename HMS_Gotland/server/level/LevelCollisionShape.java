@@ -217,9 +217,9 @@ public class LevelCollisionShape
 			{
 				////////Vertex////////
 				index.putInt(indexi++);
+				geom.putFloat(vertexsets.get(tempfaces[w] - 1)[0]);
 				geom.putFloat(vertexsets.get(tempfaces[w] - 1)[1]);
-				geom.putFloat(vertexsets.get(tempfaces[w] - 1)[1]);
-				geom.putFloat(vertexsets.get(tempfaces[w] - 1)[1]);
+				geom.putFloat(vertexsets.get(tempfaces[w] - 1)[2]);
 
 			}
 			numpolys++;

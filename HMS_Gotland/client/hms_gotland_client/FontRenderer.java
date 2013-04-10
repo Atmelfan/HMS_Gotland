@@ -174,6 +174,8 @@ public class FontRenderer
 			GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 0, 0);
 			
 			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
+			GL20.glEnableVertexAttribArray(0);
+			GL20.glEnableVertexAttribArray(1);
 		}
 		GL30.glBindVertexArray(0);
 		
@@ -225,26 +227,15 @@ public class FontRenderer
 					GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbovId);
 					{
 						// Update vertices position
-						GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0,
-								GLUtil.buffer(vertices));
+						GL15.glBufferSubData(GL15.GL_ARRAY_BUFFER, 0, GLUtil.buffer(vertices));
 					}
 					GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
-
-					GL20.glEnableVertexAttribArray(0);
-					GL20.glEnableVertexAttribArray(1);
-
 					// Bind to the index VBO that has all the information about
 					// the order of the vertices
 					GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, vboiId);
 
 					// Draw the vertices
-					GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount,
-							GL11.GL_UNSIGNED_BYTE, 0);
-
-					// Put everything back to default (deselect)
-					GL15.glBindBuffer(GL15.GL_ELEMENT_ARRAY_BUFFER, 0);
-					GL20.glDisableVertexAttribArray(0);
-					GL20.glDisableVertexAttribArray(1);
+					GL11.glDrawElements(GL11.GL_TRIANGLES, indicesCount, GL11.GL_UNSIGNED_BYTE, 0);
 					dx += cw;
 				}
 			}
