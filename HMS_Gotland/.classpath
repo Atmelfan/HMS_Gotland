@@ -34,6 +34,5 @@
 			<attribute name="javadoc_location" value="file:/C:/Users/Atmelfan/Desktop/kryonet-javadoc/"/>
 		</attributes>
 	</classpathentry>
-	<classpathentry kind="lib" path="Resources/indiespot-media-0.8.07.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>
