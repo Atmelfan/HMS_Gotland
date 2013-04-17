@@ -163,7 +163,7 @@ public class RenderEngine
 	{
 		ShaderUtils.useProgram(starfield_shader_id);
 		{
-			GL20.glUniformMatrix4(vpMatrixPos, false, GLUtil.bufferMatrix(camera.getViewProjectionMatrix()));
+			ShaderUtils.setUniformMatrix4(starfield_shader_id, "viewprojMatrix", vpMatrix);
 			GL30.glBindVertexArray(starVao_id);
 			{
 				GL11.glDrawArrays(GL11.GL_POINTS, 0, STAR_COUNT);

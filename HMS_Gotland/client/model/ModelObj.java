@@ -357,8 +357,8 @@ public class ModelObj extends Model
 		ShaderUtils.useProgram(shader_id);
 		{
 			ShaderUtils.setUniformVar(shader_id, "time", engine.getPartTick() / 3);
-			GL20.glUniformMatrix4(vpMatrixPos, false, GLUtil.bufferMatrix(vpMatrix));
-			GL20.glUniformMatrix4(mdMatrixPos, false, GLUtil.bufferMatrix(matrix));
+			ShaderUtils.setUniformMatrix4(shader_id, "viewprojMatrix", vpMatrix);
+			ShaderUtils.setUniformMatrix4(shader_id, "modelMatrix", matrix);
 			
 			for (FaceGroup g : mtllibs.values())
 			{
