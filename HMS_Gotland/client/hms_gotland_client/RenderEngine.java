@@ -64,7 +64,7 @@ public class RenderEngine
 			Display.create(pixelFormat, contextAtrributes);
 			
 			GL11.glViewport(0, 0, width, height);
-			AL.create();
+			//AL.create();
 		} catch (LWJGLException e) {
 			e.printStackTrace();
 			System.exit(-1);
@@ -173,7 +173,7 @@ public class RenderEngine
 	
 	public void destroy()
 	{
-		AL.destroy();
+		//AL.destroy();
 		Display.destroy();
 	}
 

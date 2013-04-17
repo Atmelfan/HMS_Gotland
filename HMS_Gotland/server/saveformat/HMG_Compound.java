@@ -17,6 +17,26 @@ public class HMG_Compound extends HMG_Basic
 	{
 	}
 
+	public void setByteArray(String s, byte[] b)
+	{
+		HMG_ByteArray bytearray = new HMG_ByteArray();
+		bytearray.name = s;
+		bytearray.array = b;
+		data.put(s, bytearray);
+	}
+	
+	public byte[] getByteArray(String s)
+	{
+		HMG_Basic tag = data.get(s);
+		if(tag instanceof HMG_ByteArray)
+		{
+			return ((HMG_ByteArray)tag).array;
+		}else
+		{
+			return null;
+		}
+	}
+	
 	//Get/set for integer
 	public void setInteger(String s, int i)
 	{
@@ -175,6 +195,8 @@ public class HMG_Compound extends HMG_Basic
 		out.writeInt(data.size());
 		for(HMG_Basic tag : data.values())
 		{
+			if(tag == null)
+				continue;
 			out.writeInt(tag.getID());
 			tag.write(out);
 		}

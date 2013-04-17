@@ -6,41 +6,64 @@ import java.util.List;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL21;
 
 public class Vbo
-{
-	private List<Triangle> triangles = new ArrayList<>();
+{	
+	private List<float[]> elements = new ArrayList<>();
+	private int numElements;
 	private int id;
+	private int target;
 	
-	public void addTriangle(Triangle triangle)
+	public Vbo(int t)
 	{
-		triangles.add(triangle);
+		target = t;
+		id = GL15.glGenBuffers();
+	}
+	
+	public void addElements(float... values)
+	{
+		numElements += values.length;
+		elements.add(values);
 	}
 	
 	public void compile(int usage)
 	{
-		id = GL15.glGenBuffers();
-		FloatBuffer buffer = BufferUtils.createFloatBuffer(triangles.size() * 8 * 3);
-		for (int i = 0; i < triangles.size(); i++)
+		FloatBuffer buffer = BufferUtils.createFloatBuffer(numElements);
+		for (int i = 0; i < elements.size(); i++)
 		{
-			buffer.put(triangles.get(i).getElements());
+			buffer.put(elements.get(i));
 		}
 		buffer.flip();
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, id);
+		GL15.glBindBuffer(target, id);
 		{
-			GL15.glBufferData(GL15.GL_ARRAY_BUFFER, buffer, usage);
+			GL15.glBufferData(target, buffer, usage);
 		}
 	}
 	
 	public void bind()
 	{
-		GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, id);
+		GL15.glBindBuffer(target, id);
+	}
+	
+	public void unbind()
+	{
+		GL15.glBindBuffer(target, 0);
 	}
 	
 	public void clear()
 	{
-		triangles.clear();
+		elements.clear();
+		numElements = 0;
+	}
+	
+	public void destroy()
+	{
+		clear();
+		unbind();
+		GL15.glDeleteBuffers(id);
 	}
 
+	public int size() {
+		return numElements;
+	}
 }

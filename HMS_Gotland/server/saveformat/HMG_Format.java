@@ -27,13 +27,11 @@ public class HMG_Format
 	{
 		if(args.length > 1 && args[0].equalsIgnoreCase("print"))
 		{
-			for (int i = 0; i < args.length; i++)
+			for (int i = 1; i < args.length; i++)
 			{
 				File file = new File(args[i]);
 				if(!file.exists())
 				{
-					System.err.println("File doesn't exist: " + file.getAbsolutePath());
-					System.err.println("Here, have this formula instead: 4/3 * Pi * sqrt(X^2 + Y^2 + Z^2 + time^2)^3");
 					continue;
 				}
 				HMG_Format sf1 = new HMG_Format();
@@ -132,5 +130,6 @@ public class HMG_Format
 		tags.put(3, HMG_String.class);
 		tags.put(4, HMG_Compound.class);
 		tags.put(5, HMG_List.class);
+		tags.put(6, HMG_ByteArray.class);
 	}
 }

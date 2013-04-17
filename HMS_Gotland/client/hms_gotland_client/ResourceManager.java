@@ -87,16 +87,6 @@ public class ResourceManager
 		return new File(s);
 	}
 	
-	
-	
-	public static void main(String[] args)
-	{
-		System.setProperty("org.lwjgl.librarypath",System.getProperty("user.dir") + File.separator + "Resources" + File.separator + "native" + File.separator + OSUtil.getOS());
-		
-		ResourceManager man = new ResourceManager(null);
-		man.createNewServerResource("singleplayer", "localhost", 4321, 4322);
-	}
-	
 	/**
 	 * 
 	 * @param url tex gpa-robotics.com/blabla.md3

@@ -59,6 +59,7 @@ public class HMS_Gotland
 	public boolean playing;
 	private long lastTick;
 	private Server connectedServer;
+	private SoundManager soundEngine;
 	
 	public HMS_Gotland() 
 	{
@@ -73,10 +74,15 @@ public class HMS_Gotland
 			Thread.currentThread().setName("HMS_Gotland_Client");
 			resources = new ResourceManager(this);
 			renderEngine = new RenderEngine(this, WIDTH, HEIGHT);
+			soundEngine = new SoundManager();
 			wardos = new Wardos(this);
 			lastFrame = Sys.getTime();
 			printInfo();
 			//wardos.playMovie("generic://test.avi");
+			SoundSource hydro = soundEngine.getNewSource("2422__andrew-duke__dirt.wav");
+			hydro.setLooping(true);
+			hydro.setVolume(0.15f);
+			hydro.play();
 			
 			while (running) 
 			{
@@ -101,6 +107,7 @@ public class HMS_Gotland
 			wardos.stopMovie();
 			renderEngine.destroy();
 		}
+		System.out.println("Shutting down...");
 	}
 
 	private void tick()
@@ -194,7 +201,7 @@ public class HMS_Gotland
 			}
 		}
 		
-		if(Mouse.isGrabbed())
+		if(Mouse.isGrabbed() && playing)
 		{
 			renderEngine.camera.pitch += Mouse.getDY();
 			renderEngine.camera.pitch = clamp(renderEngine.camera.pitch, -35, 35);

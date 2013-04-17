@@ -4,8 +4,6 @@ import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 
-import Util.VertexData;
-
 public class Vao
 {
 	int id;
@@ -15,14 +13,28 @@ public class Vao
 	}
 	
 	
-	public void addBuffer(int index, Vbo vbo)
+	public void enableVertexAttrib(int i)
 	{
+		bind();
+		GL20.glEnableVertexAttribArray(i);
+	}
+	
+	public void addBuffer(int index, int size, int unit, int stride, int offset, Vbo vbo)
+	{
+		bind();
 		vbo.bind();
-		{
-			GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 32, 0);
-			GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 32, 12);
-			GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, 32, 20);
-		}
+		GL20.glVertexAttribPointer(index, size, unit, false, stride, offset);
+	}
+	
+	public void drawArrays(int primitive, int first, int count)
+	{
+		bind();
+		GL11.glDrawArrays(primitive, first, count);
+	}
+	
+	public void bind()
+	{
+		GL30.glBindVertexArray(id);
 	}
 	
 }

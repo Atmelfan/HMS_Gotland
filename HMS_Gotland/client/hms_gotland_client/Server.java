@@ -8,10 +8,13 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
+import java.io.PrintWriter;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 
 import javax.swing.JOptionPane;
+import javax.xml.bind.DatatypeConverter;
 
 import saveformat.HMG_Basic;
 import saveformat.HMG_Compound;
@@ -48,6 +51,8 @@ public class Server extends Listener
 		client = new Client();
 		Packet.registerPackets(client.getKryo());
 		client.addListener(this);
+		updateChecksums(new File(dir, "enviroments"));
+		updateChecksums(new File(dir, "models"));
 	}
 	
 	public boolean connect(Client client)
@@ -145,15 +150,47 @@ public class Server extends Listener
 				try
 				{
 					client.connect(1000, ip, portTcp, portUdp);
+					sleep(5000);
+					if(client.isConnected())
+					{
+						client.stop();
+						stat = "Server failed to respond.";
+					}
 					
 				} catch (IOException e)
 				{
 					System.err.println("Error: Server.update() - " + e.getMessage());
+				} catch (InterruptedException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
 				}
 			}
 		};
 		thread.setDaemon(true);
 		thread.start();
+	}
+	
+	public void updateChecksums(File file)
+	{
+		if(!file.isDirectory())
+			return;
+		HMG_Format hmg = new HMG_Format();
+		hmg.header.setString("Directory", file.getName());
+		File[] files = file.listFiles();
+		for(int i = 0; i < files.length; i++) {
+			File md5 = files[i];
+			try {
+				hmg.root.setByteArray(md5.getName(), OSUtil.generateMD5(new FileInputStream(md5)));
+			} catch (FileNotFoundException e) {
+				e.printStackTrace();
+			}
+		}
+		try {
+			hmg.write(new File(file, "checksums.hmg"));
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 	}
 	
 	public boolean downloadResources()
@@ -207,8 +244,8 @@ public class Server extends Listener
 	@Override
 	public void connected(Connection arg0)
 	{
-		arg0.sendTCP(new Packet.ReqInfo());
 		super.connected(arg0);
+		arg0.sendTCP(new Packet.ReqInfo());
 	}
 
 	@Override
@@ -231,8 +268,8 @@ public class Server extends Listener
 			{
 				serverDependencies = info.dependencies;
 			}
-			client.stop();
 		}
+		client.stop();
 	}
 	
 	
