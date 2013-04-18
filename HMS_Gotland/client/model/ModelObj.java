@@ -411,7 +411,8 @@ public class ModelObj extends Model
 		public void compileVBO()
 		{
 			vao = new Vao();
-			vbo = new Vbo(GL15.GL_ARRAY_BUFFER);
+			
+			vbo = new Vbo(GL15.GL_ARRAY_BUFFER, faces.size() * 3 * 8 * 4);
 			//Assemble face indice
 			for (int i = 0; i < faces.size(); i++)
 			{

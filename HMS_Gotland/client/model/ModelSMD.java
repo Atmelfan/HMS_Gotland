@@ -9,18 +9,25 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.ByteBuffer;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
+import javax.vecmath.Matrix4f;
 import javax.vecmath.Quat4f;
 import javax.vecmath.Vector3f;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.opengl.GL13;
+import org.lwjgl.opengl.GL15;
 import org.lwjgl.opengl.GL20;
 
 import Util.GLUtil;
 import Util.ShaderUtils;
 
+import com.bulletphysics.linearmath.MatrixUtil;
 import com.bulletphysics.linearmath.QuaternionUtil;
 
 /* Name: ModelSMD.java
@@ -111,11 +118,15 @@ public class ModelSMD extends Model
 {
 	public int numPolygons = 0;
 	public int version;
-	private HashMap<String, GPR_VMT> materials = new HashMap<>();
+	private HashMap<String, SMDMaterial> materials = new HashMap<>();
 	private ArrayList<SMDNode> nodes = new ArrayList<>();
 	private ArrayList<ArrayList<SMDBone>> skeleton = new ArrayList<>();
 	private HashMap<String, ArrayList<SMDVertex>> trias = new HashMap<>();
 	private int num_skeleton_frames;
+	
+	private HashMap<Integer, Integer> nodeParents;
+	private ArrayList<HashMap<Integer, Integer>> boneindices = new ArrayList<>();
+	private ArrayList<SMDBone> bones = new ArrayList<>();
 	
 	private static int vsId;
 	private static int fsId;
@@ -140,6 +151,7 @@ public class ModelSMD extends Model
 		int lastTime = 0;
 		String lastMaterial = "";
 		SMDVertex currentTriangle = null;
+		int indices = 0;
 		
 		try
 		{
@@ -186,7 +198,7 @@ public class ModelSMD extends Model
 					if(args[0].equals("material"))
 					{
 						lastMaterial = args[1];
-						materials.put(args[1], new GPR_VMT());
+						materials.put(args[1], new SMDMaterial());
 					}
 					
 					if(args[0].equals("texture"))
@@ -204,15 +216,16 @@ public class ModelSMD extends Model
 				{
 					if(args[0].equals("time"))
 					{
-						ArrayList<SMDBone> list = skeleton.get(lastTime);
+						Map<Integer, Integer> map = boneindices.get(lastTime);
 						lastTime = Integer.parseInt(args[1]);
 						num_skeleton_frames = lastTime;
-						if(list != null)
+						if(map != null)
 						{
-							skeleton.add(new ArrayList<SMDBone>(list));
+							//Reuse indices from last frame(if any).
+							boneindices.add(new HashMap<Integer, Integer>(map));
 						}else
 						{
-							skeleton.add(new ArrayList<SMDBone>());
+							boneindices.add(new HashMap<Integer, Integer>());
 						}
 						
 						
@@ -225,22 +238,15 @@ public class ModelSMD extends Model
 						bone.id = id;
 						bone.setPosition(pos[0], pos[1], pos[2]);
 						bone.setEulerOrientation(ori[0], ori[1], ori[2]);
-						ArrayList<SMDBone> skel = skeleton.get(lastTime);
-						if(skel.isEmpty())
-						{//This is the first frame
-							skel.add(bone);
-						}else
-						{//Find and replace the old bone definition
-							for (int i = 0; i < skel.size(); i++)
-							{
-								SMDBone temp = skel.get(i);
-								if(temp.id == id)
-								{
-									skel.set(i, bone);//Replace the old bone with the new definition
-									break;
-								}
-							}
+						int i = findBone(bone);
+						//Check if
+						if(i == -1)
+						{
+							bones.add(bone);
+							i = indices++;
 						}
+						//Map the bone indice to it's id.
+						boneindices.get(lastTime).put(id, i);
 					}
 				}
 				else if(isTriangles)
@@ -251,11 +257,11 @@ public class ModelSMD extends Model
 						trias.put(args[1], new ArrayList<ModelSMD.SMDVertex>());
 					}else
 					{
-						int parent = Integer.parseInt(args[0]);
 						float[] vertex = new float[]{Float.parseFloat(args[1]), Float.parseFloat(args[2]), Float.parseFloat(args[3])};
 						float[] normal = new float[]{Float.parseFloat(args[4]), Float.parseFloat(args[5]), Float.parseFloat(args[6])};
 						float[] st = new float[]{Float.parseFloat(args[7]), Float.parseFloat(args[8])};
 						SMDVertex vert = new SMDVertex();
+						vert.parent = Integer.parseInt(args[0]);
 						vert.setVertex(vertex, normal, st);
 						trias.get(lastMaterial).add(currentTriangle);
 						numPolygons++;
@@ -272,6 +278,16 @@ public class ModelSMD extends Model
 			System.err.println("Error: ModelSMD.read() - " + e.getMessage());
 		}
 		numPolygons /= 3;
+	}
+	
+	public int findBone(SMDBone bone)
+	{
+		for (int i = 0; i < bones.size(); i++)
+		{
+			if(bone.id == bones.get(i).id)
+				return i;
+		}
+		return -1;
 	}
 	
 	public void setupShader()
@@ -294,39 +310,8 @@ public class ModelSMD extends Model
 	
 	public void compileBoneVBO()
 	{
-		ByteBuffer nodevbo = BufferUtils.createByteBuffer(2 * nodes.size() * 4);
-		for (int i = 0; i < nodes.size(); i++)
-		{
-			
-			SMDNode node = nodes.get(i);
-			nodevbo.putInt(node.id);
-			nodevbo.putInt(node.parent);
-		}
-		nodevbo.flip();
 		
-		ByteBuffer skeletonvbo = BufferUtils.createByteBuffer(8 * skeleton.get(0).size() * num_skeleton_frames * 4);
-		float[] position = new float[3];
-		float[] orientation = new float[4];
-		for (int i = 0; i < num_skeleton_frames; i++)
-		{
-			SMDBone[] bon = skeleton.get(i).toArray(new SMDBone[0]);
-			for (int j = 0; j < bon.length; j++)
-			{
-				skeletonvbo.putInt(bon[i].id);//node id
-				
-				bon[i].position.get(position);
-				skeletonvbo.putFloat(position[0]);
-				skeletonvbo.putFloat(position[1]);
-				skeletonvbo.putFloat(position[2]);
-				
-				bon[i].orientation.get(orientation);
-				skeletonvbo.putFloat(orientation[0]);
-				skeletonvbo.putFloat(orientation[1]);
-				skeletonvbo.putFloat(orientation[2]);
-				skeletonvbo.putFloat(orientation[3]);
-			}
-		}
-		skeletonvbo.flip();
+		
 		
 	}
 	
@@ -365,6 +350,17 @@ public class ModelSMD extends Model
 		{
 			position.set(x, y, z);
 		}
+
+		@Override
+		public boolean equals(Object obj)
+		{
+			if(obj instanceof SMDBone)
+			{
+				SMDBone bone = (SMDBone)obj;
+				return position.equals(bone.position) && orientation.equals(bone.orientation) && id == bone.id;
+			}
+			return false;
+		}
 	}
 	
 	private class SMDVertex
@@ -380,6 +376,7 @@ public class ModelSMD extends Model
 			this.normal = normal;
 			this.st = st;
 		}
+		
 	}
 	
 	private class SMDVertexAnimation
@@ -387,7 +384,7 @@ public class ModelSMD extends Model
 		
 	}
 	
-	private class GPR_VMT
+	private class SMDMaterial
 	{
 		public int texture;
 	}

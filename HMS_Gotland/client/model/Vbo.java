@@ -1,5 +1,6 @@
 package model;
 
+import java.nio.ByteBuffer;
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
@@ -9,34 +10,55 @@ import org.lwjgl.opengl.GL15;
 
 public class Vbo
 {	
-	private List<float[]> elements = new ArrayList<>();
-	private int numElements;
+	protected ByteBuffer elements;
 	private int id;
 	private int target;
 	
-	public Vbo(int t)
+	public Vbo(int t, int size)
 	{
+		elements = BufferUtils.createByteBuffer(size);
 		target = t;
 		id = GL15.glGenBuffers();
 	}
 	
 	public void addElements(float... values)
 	{
-		numElements += values.length;
-		elements.add(values);
+		for (int i = 0; i < values.length; i++)
+		{
+			elements.putFloat(values[i]);
+		}
+	}
+	
+	public void addElements(int... values)
+	{
+		for (int i = 0; i < values.length; i++)
+		{
+			elements.putInt(values[i]);
+		}
+	}
+	
+	public void addElements(short... values)
+	{
+		for (int i = 0; i < values.length; i++)
+		{
+			elements.putShort(values[i]);
+		}
+	}
+	
+	public void addElements(byte... values)
+	{
+		for (int i = 0; i < values.length; i++)
+		{
+			elements.put(values[i]);
+		}
 	}
 	
 	public void compile(int usage)
 	{
-		FloatBuffer buffer = BufferUtils.createFloatBuffer(numElements);
-		for (int i = 0; i < elements.size(); i++)
-		{
-			buffer.put(elements.get(i));
-		}
-		buffer.flip();
+		elements.flip();
 		GL15.glBindBuffer(target, id);
 		{
-			GL15.glBufferData(target, buffer, usage);
+			GL15.glBufferData(target, elements, usage);
 		}
 	}
 	
@@ -53,7 +75,6 @@ public class Vbo
 	public void clear()
 	{
 		elements.clear();
-		numElements = 0;
 	}
 	
 	public void destroy()
@@ -64,6 +85,6 @@ public class Vbo
 	}
 
 	public int size() {
-		return numElements;
+		return elements.capacity();
 	}
 }
