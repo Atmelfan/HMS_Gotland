@@ -9,6 +9,8 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 
+import javax.vecmath.Vector3f;
+
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
@@ -18,7 +20,7 @@ import org.lwjgl.util.WaveData;
 
 import Util.GLUtil;
 
-public class SoundManager 
+public class SoundEngine 
 {
 	/** Position of the source sound. */
 	FloatBuffer sourcePos = BufferUtils.createFloatBuffer(3).put(new float[] { 0.0f, 0.0f, 0.0f });
@@ -32,10 +34,10 @@ public class SoundManager
 	FloatBuffer listenerOri =
 	    BufferUtils.createFloatBuffer(6).put(new float[] { 0.0f, 0.0f, -1.0f,  0.0f, 1.0f, 0.0f });
 	
-	private HashMap<String, SoundBuffer> sounds = new HashMap<>();
-	private List<SoundSource> sources = new ArrayList<>();
+	private HashMap<String, SoundBuffer> sounds = new HashMap<String, SoundBuffer>();
+	private List<SoundSource> sources = new ArrayList<SoundSource>();
 
-	public SoundManager()
+	public SoundEngine()
 	{
 		try {
 			AL.create();
@@ -79,7 +81,7 @@ public class SoundManager
 		return new SoundSource(this, son);
 	}
 	
-	void setListenerValues()
+	private void setListenerValues()
 	{
 		listenerPos.flip();
 		AL10.alListener(AL10.AL_POSITION,    listenerPos);
@@ -87,6 +89,26 @@ public class SoundManager
 		AL10.alListener(AL10.AL_VELOCITY,    listenerVel);
 		listenerOri.flip();
 		AL10.alListener(AL10.AL_ORIENTATION, listenerOri);
+	}
+	
+	public void setPosition(Vector3f pos)
+	{
+		AL10.alListener3f(AL10.AL_POSITION, pos.x, pos.y, pos.z);
+	}
+	
+	public void setVelocity(Vector3f vel) 
+	{
+		AL10.alListener3f(AL10.AL_VELOCITY, vel.x, vel.y, vel.z);
+	}
+	
+	public void setOrientation(Vector3f pos)
+	{
+		AL10.alListener3f(AL10.AL_ORIENTATION, pos.x, pos.y, pos.z);
+	}
+	
+	public void setVolume(float volume)
+	{
+		AL10.alListenerf(AL10.AL_POSITION, volume);
 	}
 	
 	class SoundBuffer
@@ -107,5 +129,9 @@ public class SoundManager
 			so.destroy();
 		}
 		AL.destroy();
+	}
+
+	public SoundBuffer getBuffer(String buffer) {
+		return sounds.get(buffer);
 	}
 }

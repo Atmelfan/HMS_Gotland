@@ -1,6 +1,10 @@
 package hms_gotland_client;
 
 import java.io.IOException;
+import java.util.Random;
+
+import model.GLShader;
+
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
@@ -14,9 +18,7 @@ public class Wardos
 {	
 	int gui_id;
 	private int vaoId;
-	private int vsId;
-	private int fsId;
-	private int shader_id;
+	private GLShader shader;
 	private int indicesCount;
 	
 	private int vboiId;
@@ -112,18 +114,7 @@ public class Wardos
 	
 	public void setupShader()
 	{
-		vsId = ShaderUtils.makeShader(ShaderUtils.loadText("Resources/shaders/wardos.vert"), GL20.GL_VERTEX_SHADER);
-		// Load the fragment shader
-		fsId = ShaderUtils.makeShader(ShaderUtils.loadText("Resources/shaders/wardos.frag"), GL20.GL_FRAGMENT_SHADER);
-		
-		// Create a new shader program that links both shaders
-		shader_id = ShaderUtils.makeProgram(vsId, fsId);
-		
-		GL20.glBindAttribLocation(shader_id, 0, "in_Position");
-		GL20.glBindAttribLocation(shader_id, 1, "in_TextureCoord");
-		
-		GL20.glValidateProgram(shader_id);
-		
+		shader = new GLShader("Resources/shaders/wardos");
 		GLUtil.cerror("HUD shader init");
 	}
 	
@@ -155,50 +146,10 @@ public class Wardos
 	{
 		GL11.glDisable(GL11.GL_DEPTH_TEST);
 		GL11.glDisable(GL11.GL_CULL_FACE);
-		/*if(movie != null)
-		{
-			audioRenderer.tick(movie);
-			outer:
-			if(movie.isTimeForNextFrame()) 
-			{
-				final int maxFramesBacklog = 5;
-				int framesRead = 0;
-				do 
-				{
-					if (framesRead > 0) {
-						// signal the AV-sync that we processed a frame
-						movie.onUpdatedVideoFrame();
-					}
-
-					// grab the next frame from the video stream
-					textureBuffer = movie.videoStream().readFrameInto(textureBuffer);
-
-					if (textureBuffer == null) {
-						break outer;
-					}
-					framesRead++;
-				} while (movie.hasVideoBacklogOver(maxFramesBacklog));
-
-				if (framesRead > 1) {
-					System.out.println("video frames skipped: " + (framesRead - 1));
-				}
-				glTexSubImage2D(GL_TEXTURE_2D, 0, 0, 0, movie.width(), movie.height(), GL_RGB, GL_UNSIGNED_BYTE, textureBuffer);
-				// signal the AV-sync that we processed a frame
-				movie.onUpdatedVideoFrame();
-			}
-			if(audioRenderer.getState() == State.CLOSED)
-			{
-				stopMovie();
-			}
-		}
-		*/
-		ShaderUtils.useProgram(shader_id);
+		
+		shader.bind();
 		{
 			GL11.glBindTexture(GL11.GL_TEXTURE_2D, game.playing ? game_id : gui_id);
-			/*if(movie != null)
-			{
-				GL11.glBindTexture(GL11.GL_TEXTURE_2D, movieTextureID);
-			}*/
 			// Bind to the VAO that has all the information about the vertices
 			GL30.glBindVertexArray(vaoId);
 			{
@@ -219,7 +170,6 @@ public class Wardos
 			GL30.glBindVertexArray(0);
 			renderGUI();
 		}
-		ShaderUtils.useProgram(0);
 		
 		//font.drawString(4, 6, "Coord: N/A", 0f, 0.5f, 0f, 175/255f);
 		//font.drawStringRightAdjusted(1024, 0, "Coord: " + game.getPlayer().getPos().toString(), 0f, 0.5f, 0f, 175/255f);

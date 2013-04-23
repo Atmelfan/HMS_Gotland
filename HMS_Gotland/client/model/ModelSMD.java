@@ -111,10 +111,10 @@ public class ModelSMD extends Model
 {
 	public int numPolygons = 0;
 	public int version;
-	private HashMap<String, GPR_VMT> materials = new HashMap<>();
-	private ArrayList<SMDNode> nodes = new ArrayList<>();
-	private ArrayList<ArrayList<SMDBone>> skeleton = new ArrayList<>();
-	private HashMap<String, ArrayList<SMDVertex>> trias = new HashMap<>();
+	private HashMap<String, GPR_VMT> materials = new HashMap<String, GPR_VMT>();
+	private ArrayList<SMDNode> nodes = new ArrayList<SMDNode>();
+	private ArrayList<ArrayList<SMDBone>> skeleton = new ArrayList<ArrayList<SMDBone>>();
+	private HashMap<String, ArrayList<SMDVertex>> trias = new HashMap<String, ArrayList<SMDVertex>>();
 	private int num_skeleton_frames;
 	
 	private static int vsId;
@@ -128,7 +128,7 @@ public class ModelSMD extends Model
 		read(resource);
 	}
 	
-	private void read(File resource)
+	protected void read(File resource)
 	{
 		String line = "";
 		BufferedReader input = null;

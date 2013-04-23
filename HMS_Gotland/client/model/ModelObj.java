@@ -58,18 +58,14 @@ public class ModelObj extends Model
 	public float rightpoint = 0;	// x+
 	public float farpoint = 0;		// z-
 	public float nearpoint = 0;		// z+
-	private static int vsId;
-	private static int fsId;
-	private static int shader_id;
+	private static GLShader shader;
 	
 	public ModelObj(RenderEngine rend, File file)
 	{
 		super(rend, file);
-		//System.out.println("OBJ:Loading " + file.getName());
 		read(file);
-		centerit();
 		compileFaceGroups();
-		if(shader_id == 0)
+		if(shader == null)
 		{
 			setupShader();
 		}
@@ -85,24 +81,14 @@ public class ModelObj extends Model
 	
 	public void setupShader()
 	{
-		vsId = ShaderUtils.makeShader(ShaderUtils.loadText("Resources/shaders/default.vert"), GL20.GL_VERTEX_SHADER);
-		// Load the fragment shader
-		fsId = ShaderUtils.makeShader(ShaderUtils.loadText("Resources/shaders/default.frag"), GL20.GL_FRAGMENT_SHADER);
-		
-		// Create a new shader program that links both shaders
-		shader_id = ShaderUtils.makeProgram(vsId, fsId);
-		
-		GL20.glBindAttribLocation(shader_id, 0, "in_Position");
-		GL20.glBindAttribLocation(shader_id, 1, "in_TextureCoord");
-		GL20.glBindAttribLocation(shader_id, 2, "in_Normal");
-		
-		GL20.glValidateProgram(shader_id);
-		
-		GLUtil.cerror(getClass().getName() + " setupShader");
-		
+		shader = new GLShader("Resources/shaders/default");
+		shader.bindAttribLocation(0, "in_Position");
+		shader.bindAttribLocation(1, "in_TextureCoord");
+		shader.bindAttribLocation(2, "in_Normal");
 	}
 	
-	private void read(File file) {
+	@Override
+	protected void read(File file) {
 		int linecounter = 0;
 		FaceGroup currentGroup = null;
 		try 
@@ -238,6 +224,7 @@ public class ModelObj extends Model
 		{
 			System.out.println("Malformed OBJ (on line " + linecounter + "): " + file.getName() + "\r \r" + e.getMessage());
 		}
+		centerit();
 	}
 
 	private void compileFaceGroups()
@@ -250,7 +237,7 @@ public class ModelObj extends Model
 		}
 	}
 	
-	private HashMap<String, FaceGroup> mtllibs = new HashMap<>();
+	private HashMap<String, FaceGroup> mtllibs = new HashMap<String, FaceGroup>();
 	private void loadMTL(String string, File f)
 	{
 		File mtllib = new File(f, string);
@@ -347,12 +334,13 @@ public class ModelObj extends Model
 	@Override
 	public void draw(float frame, float[] vpMatrix, float[] matrix, RenderEngine engine)
 	{	
+		super.draw(frame, vpMatrix, matrix, engine);
 		//TODO fix ugly quick hacked OpenGL code
-		ShaderUtils.useProgram(shader_id);
+		shader.bind();
 		{
-			ShaderUtils.setUniformVar(shader_id, "time", engine.getPartTick() / 3);
-			ShaderUtils.setUniformMatrix4(shader_id, "viewprojMatrix", vpMatrix);
-			ShaderUtils.setUniformMatrix4(shader_id, "modelMatrix", matrix);
+			shader.setUniformVar("time", engine.getPartTick() / 3);
+			shader.setUniformMatrix4("viewprojMatrix", vpMatrix);
+			shader.setUniformMatrix4("modelMatrix", matrix);
 			
 			for (FaceGroup g : mtllibs.values())
 			{
@@ -360,7 +348,6 @@ public class ModelObj extends Model
 			}
 			
 		}
-		ShaderUtils.useProgram(0);
 		GLUtil.cerror("draw");
 	}
 	
@@ -370,7 +357,7 @@ public class ModelObj extends Model
 		//TODO
 	}
 	
-	private ObjectArrayList<Vector3f> vertexes = new ObjectArrayList<>();
+	private ObjectArrayList<Vector3f> vertexes = new ObjectArrayList<Vector3f>();
 	
 	@Override
 	public CollisionShape body()
@@ -400,8 +387,8 @@ public class ModelObj extends Model
 		private ArrayList<int[]> facestexs = new ArrayList<int[]>(); // Array of of Faces textures
 		private ArrayList<int[]> facesnorms = new ArrayList<int[]>(); // Array of Faces normals
 		private int numVerts = 0;
-		private Vao vao;
-		private Vbo vbo;
+		private GLVao vao;
+		private GLVbo vbo;
 		
 		public FaceGroup(String string)
 		{
@@ -410,8 +397,8 @@ public class ModelObj extends Model
 
 		public void compileVBO()
 		{
-			vao = new Vao();
-			vbo = new Vbo(GL15.GL_ARRAY_BUFFER);
+			vao = new GLVao();
+			vbo = new GLVbo(GL15.GL_ARRAY_BUFFER);
 			//Assemble face indice
 			for (int i = 0; i < faces.size(); i++)
 			{

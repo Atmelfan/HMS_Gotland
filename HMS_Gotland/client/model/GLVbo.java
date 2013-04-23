@@ -1,22 +1,27 @@
 package model;
 
+import hms_gotland_client.RenderEngine;
+
 import java.nio.FloatBuffer;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.lwjgl.BufferUtils;
+import org.lwjgl.opencl.CL10;
+import org.lwjgl.opencl.CL10GL;
+import org.lwjgl.opencl.CLMem;
 import org.lwjgl.opengl.GL15;
 
-public class Vbo
+public class GLVbo
 {	
-	private List<float[]> elements = new ArrayList<>();
+	private List<float[]> elements = new ArrayList<float[]>();
 	private int numElements;
 	private int id;
 	private int target;
 	
-	public Vbo(int t)
+	public GLVbo(int target)
 	{
-		target = t;
+		this.target = target;
 		id = GL15.glGenBuffers();
 	}
 	
@@ -24,6 +29,11 @@ public class Vbo
 	{
 		numElements += values.length;
 		elements.add(values);
+	}
+	
+	public void update(int index, float... value)
+	{
+		elements.set(index, value);
 	}
 	
 	public void compile(int usage)
@@ -65,5 +75,13 @@ public class Vbo
 
 	public int size() {
 		return numElements;
+	}
+
+	public int getId() {
+		return id;
+	}
+	
+	public CLMem getCLmemory(int flags) {
+		return CL10GL.clCreateFromGLBuffer(RenderEngine.clcontext, flags, id, null);
 	}
 }

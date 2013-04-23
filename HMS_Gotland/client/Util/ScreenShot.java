@@ -1,5 +1,6 @@
 package Util;
 
+import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.File;
 import java.io.IOException;
@@ -23,7 +24,7 @@ public class ScreenShot
 		int bpp = 4; // Assuming a 32-bit display with a byte each for red, green, blue, and alpha.
 		ByteBuffer buffer = BufferUtils.createByteBuffer(width * height * bpp);
 		GL11.glReadPixels(0, 0, width, height, GL11.GL_RGB, GL11.GL_UNSIGNED_BYTE, buffer );
-		new ScreenShotSaveThread(buffer).start();
+		new ScreenShotSaveThread(buffer, height, width).start();
 	}
 }
 
@@ -32,13 +33,19 @@ class ScreenShotSaveThread extends Thread
 	private ByteBuffer buffer;
 
 	private SimpleDateFormat file_time = new SimpleDateFormat("ddd-HH.mm.ss");
-	private SimpleDateFormat folder_date = new SimpleDateFormat("YY-MMM");
+	private SimpleDateFormat folder_date = new SimpleDateFormat("yy-MMM");
+
+	private int width;
+
+	private int height;
 	
-	public ScreenShotSaveThread(ByteBuffer buffer)
+	public ScreenShotSaveThread(ByteBuffer buffer, int h, int w)
 	{
 		super("ScreenShotSaveThread");
+		width = w;
+		height = h;
 		this.buffer = buffer;
-		setPriority(MIN_PRIORITY);
+		//setPriority(MIN_PRIORITY);
 	}
 	
 	@Override
@@ -51,14 +58,21 @@ class ScreenShotSaveThread extends Thread
 			file.getParentFile().mkdirs();
 		}
 		  
-		try
-		{
-			ImageIO.write(ImageIO.read(new ByteArrayInputStream(buffer.array())), "PNG", file);
-		} catch (IOException e)
-		{
-			System.err.println("Error: ScreenShotSaveThread.run() - " + e.getMessage());
+		BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_RGB);
+		  
+		for(int x = 0; x < width; x++){
+			for(int y = 0; y < height; y++){
+				int i = (x + (width * y)) * 3;
+				int r = buffer.get(i) & 0xFF;
+				int g = buffer.get(i + 1) & 0xFF;
+				int b = buffer.get(i + 2) & 0xFF;
+				image.setRGB(x, height - (y + 1), (0xFF << 24) | (r << 16) | (g << 8) | b);
+			}
 		}
-		
+		  
+		try {
+			ImageIO.write(image, "PNG", file);
+		} catch (IOException e) { e.printStackTrace(); }
 		
 	}
 	

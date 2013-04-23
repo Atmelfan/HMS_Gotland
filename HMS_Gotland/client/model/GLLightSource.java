@@ -1,4 +1,4 @@
-package hms_gotland_client;
+package model;
 
 import java.nio.FloatBuffer;
 
@@ -7,12 +7,12 @@ import javax.vecmath.Tuple3f;
 import org.lwjgl.util.vector.Matrix4f;
 import org.lwjgl.util.vector.Vector3f;
 
-public class LightSource
+public class GLLightSource
 {
 	public Matrix4f lightMatrix;
 	public Tuple3f color;
 	
-	public LightSource(Vector3f pos, float x, float y, float z)
+	public GLLightSource(Vector3f pos, float x, float y, float z)
 	{
 		lightMatrix = new Matrix4f();
 		lightMatrix.rotate(x, new Vector3f(1, 0, 0));
@@ -34,7 +34,6 @@ public class LightSource
 	{
 		lightMatrix.store(floatbuffer);
 		float[] col = new float[3];
-		
 		color.get(col);
 		floatbuffer.put(col);
 		return floatbuffer;

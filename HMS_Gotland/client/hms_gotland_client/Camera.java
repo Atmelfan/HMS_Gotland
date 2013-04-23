@@ -8,7 +8,6 @@ import java.nio.FloatBuffer;
 
 import level.ClientEntity;
 import level.ClientPlayer;
-import level.Entity;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
