@@ -5,10 +5,7 @@
 package hms_gotland_client;
 
 import java.nio.FloatBuffer;
-
-import level.ClientEntity;
-import level.ClientPlayer;
-import level.Entity;
+import level.DrawableEntity;
 
 import org.lwjgl.BufferUtils;
 import org.lwjgl.util.vector.Matrix4f;
@@ -28,7 +25,7 @@ public class Camera
 	public boolean thirdPerson = true;
 	public float thirdPersonRadius = 3F;
 	
-	public ClientEntity owner;
+	public DrawableEntity owner;
 	
 	public Vector3f pos = new Vector3f(0, 0, 0);
 	
@@ -52,7 +49,7 @@ public class Camera
 		viewMatrix = new Matrix4f();
 		if(thirdPerson && owner != null)
 		{
-			viewMatrix.translate(new Vector3f(0F, 0F, -owner.rayTrace(6f, yaw, pitch)));
+			viewMatrix.translate(new Vector3f(0f, 0f, 6f));
 		}
 		viewMatrix.rotate((float) Math.toRadians(pitch), new Vector3f(1, 0, 0));
 		viewMatrix.rotate((float) Math.toRadians(180 + yaw), new Vector3f(0, 1, 0));
@@ -63,7 +60,7 @@ public class Camera
 			//Matrix4f v = GLUtil.lwjglMatrix(owner.getModelMatrix());
 			//v.invert();
 			//Matrix4f.mul(viewMatrix, v, viewMatrix);
-			Vector3f o = VectorUtil.toLWJGLVector(owner.getPos());
+			Vector3f o = VectorUtil.toLWJGLVector(owner.getPosition());
 			o.negate();
 			viewMatrix.translate(o, viewMatrix);
 		}else
@@ -158,7 +155,7 @@ public class Camera
 	/**
 	 * @return the owner
 	 */
-	public ClientEntity getOwner()
+	public DrawableEntity getOwner()
 	{
 		return owner;
 	}
@@ -166,7 +163,7 @@ public class Camera
 	/**
 	 * @param owner the owner to set
 	 */
-	public void setOwner(ClientPlayer owner)
+	public void setOwner(DrawableEntity owner)
 	{
 		this.owner = owner;
 	}

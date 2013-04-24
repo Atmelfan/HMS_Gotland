@@ -130,7 +130,7 @@ public class ModelMD3 extends Model
 		GLUtil.cerror(getClass().getName() + " setupShader");
 	}
 	
-	private void read(File file)
+	protected void read(File file)
 	{
 		try
 		{

@@ -7,6 +7,7 @@ import java.net.URL;
 import java.nio.channels.Channels;
 import java.nio.channels.ReadableByteChannel;
 import java.util.ArrayList;
+import java.util.List;
 
 import Util.OSUtil;
 
@@ -17,10 +18,14 @@ public class ResourceManager
 	private File serverDir;
 	private HMS_Gotland game;
 	
+	/*
+	 * Useless class, it was meant to unify all resource loading but that didn't
+	 * happen...
+	 */
+	
 	public ResourceManager(HMS_Gotland game)
 	{
 		this.game = game;
-		updateServers();
 	}
 	
 	public void createNewServerResource(String name, String ip, int porttcp, int portudp)
@@ -57,20 +62,6 @@ public class ResourceManager
 		}
 	}
 	
-	public void setServerResource(String name)
-	{
-		serverDir = new File("Servers", name);
-		try
-		{
-			File server = new File(serverDir, "server.hmg");
-			HMG_Format serverInfo = new HMG_Format();
-			serverInfo.read(server);
-			serverInfo.header.setString("lastOpen", OSUtil.getTime());
-			serverInfo.write(server);
-		}catch(IOException e)
-		{
-		}
-	}
 	
 	public File getResource(String s)
 	{
@@ -94,60 +85,34 @@ public class ResourceManager
 	 */
 	public void download(final String url, final File dest)
 	{
-		Thread downloader = new Thread()
+		try
 		{
-			public void run()
-			{
-				try
-				{
-					File temp = File.createTempFile("hmg", ".hgt", new File(serverDir, "temp"));
-					temp.deleteOnExit();
-					//Download file to temp from url
-					URL website = new URL(url);
-				    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
-				    FileOutputStream fos = new FileOutputStream(temp);
-				    boolean done = false;
-				    long ofs = 0;
-				    System.out.println("Downloading " + dest.getName() + " from " + url);
-				    while(!done)
-				    {
-				    	long packet = fos.getChannel().transferFrom(rbc, ofs, 1024 * 512);
-				    	ofs += packet;
-				    	done = !(packet >= 1024*512);
-				    	//System.out.println("Downloaded " + packet / 1024 + "kb at " + (packet / (1024)) / ((float)(ms + 1) / 1000) + "kb/s");
-				    }
-				    System.out.println("Downloaded " + ofs / 1024 + "kb from " + url);
-				    fos.close();
-				    //Copy to its real position
-				    dest.createNewFile();
-				    OSUtil.copyFile(temp, dest);
-				    dest.setExecutable(false);
-					temp.delete();//Force deletion of the temporary file when complete
-				} catch (IOException e)
-				{
-					System.err.println("Error: ResourceManager.download() - " + e.getMessage());
-				}
-			}
-		};
-		downloader.setDaemon(true);
-		downloader.start();
-	}
-	
-	private Server[] servers;
-	public void updateServers()
-	{
-		File[] serverfiles = new File("Servers").listFiles();
-		ArrayList<Server> servers = new ArrayList<>();
-		for (int i = 0; i < serverfiles.length; i++)
+			File temp = File.createTempFile("hmg", ".hgt", new File(serverDir, "temp"));
+			temp.deleteOnExit();
+			//Download file to temp from url
+			URL website = new URL(url);
+		    ReadableByteChannel rbc = Channels.newChannel(website.openStream());
+		    FileOutputStream fos = new FileOutputStream(temp);
+		    boolean done = false;
+		    long ofs = 0;
+		    System.out.println("Downloading " + dest.getName() + " from " + url);
+		    while(!done)
+		    {
+		    	long packet = fos.getChannel().transferFrom(rbc, ofs, 1024 * 512);
+		    	ofs += packet;
+		    	done = !(packet >= 1024*512);
+		    	//System.out.println("Downloaded " + packet / 1024 + "kb at " + (packet / (1024)) / ((float)(ms + 1) / 1000) + "kb/s");
+		    }
+		    System.out.println("Downloaded " + ofs / 1024 + "kb from " + url);
+		    fos.close();
+		    //Copy to its real position
+		    dest.createNewFile();
+		    OSUtil.copyFile(temp, dest);
+		    dest.setExecutable(false);
+			temp.delete();//Force deletion of the temporary file when complete
+		} catch (IOException e)
 		{
-			if(serverfiles[i].isDirectory())
-				servers.add(new Server(game, serverfiles[i]));
+			System.err.println("Error: ResourceManager.download() - " + e.getMessage());
 		}
-		this.servers = servers.toArray(new Server[0]);
-	}
-	
-	public Server[] getServers()
-	{
-		return servers;
 	}
 }

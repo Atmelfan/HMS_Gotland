@@ -5,24 +5,32 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
+import java.util.Random;
 
 import org.lwjgl.LWJGLException;
-import org.lwjgl.openal.AL;
+import org.lwjgl.Sys;
+import org.lwjgl.opencl.CLCommandQueue;
+import org.lwjgl.opencl.CLContext;
 import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.PixelFormat;
+
+import com.bulletphysics.linearmath.Transform;
 
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
+import level.DrawableLevel;
+import model.GLShader;
 import model.Model;
 import model.ModelPool;
+import model.GLVao;
+import model.GLVbo;
 
 import Util.GLUtil;
 import Util.ShaderUtils;
@@ -31,45 +39,47 @@ public class RenderEngine
 {	
 	private static final int STAR_COUNT = 10000;
 
-	public Camera camera;
+	public static CLContext clcontext;
+	public static CLCommandQueue queue;
 	
+	public Camera camera;
 	public ModelPool modelpool = new ModelPool(this);
-
-	private int starVao_id;
-	private int vbovid;
-	private int vbocid;
-	private int starfield_vsId;
-	private int starfield_fsId;
-	private int starfield_shader_id;
-
 	private HMS_Gotland game;
 	public ResourceManager resources;
+	private int width;
+	private int height;
 
-	private int vpMatrixPos;
+	private GLShader shader;
+	private GLVbo starVbo;
+	private GLVao starVao;
 	
 	
 	public RenderEngine(HMS_Gotland game, int width, int height)
 	{
 		this.game = game;
+		this.width = width;
+		this.height = height;
 		resources = game.getResourceManager();
+		PixelFormat pixelFormat = new PixelFormat(24, 8, 8, 0, GLUtil.getMaxSamplings());
+		ContextAttribs contextAtrributes = new ContextAttribs(3, 2);
+		contextAtrributes.withForwardCompatible(true);
+		contextAtrributes.withProfileCore(true);
 		try 
 		{
-			PixelFormat pixelFormat = new PixelFormat(24, 8, 8, 0, GLUtil.getMaxSamplings());
-			ContextAttribs contextAtrributes = new ContextAttribs(3, 2);
-			contextAtrributes.withForwardCompatible(true);
-			contextAtrributes.withProfileCore(true);
-			
 			Display.setDisplayMode(new DisplayMode(width, height));
 			//Display.setTitle(WINDOW_TITLE);
 			Display.create(pixelFormat, contextAtrributes);
-			
-			GL11.glViewport(0, 0, width, height);
-			//AL.create();
+	//		setupOpenCL();
 		} catch (LWJGLException e) {
 			e.printStackTrace();
+			Sys.alert("Error: ", e.getMessage());
 			System.exit(-1);
 		}
-		
+		setupOpenGL();
+	}
+
+	public void setupOpenGL()
+	{
 		camera = new Camera(width, height, 0.1f, 1000);
 		
 		GL11.glViewport(0, 0, width, height);
@@ -83,64 +93,88 @@ public class RenderEngine
 		
 		setupStarField();
 		GLUtil.cerror(getClass().getName() + " <init>");
+		origin.setIdentity();
+	}
+	
+	Transform origin = new Transform();
+	public void drawLevel(DrawableLevel level) {
+		
+		drawModel(level.getLevelModel(), 0, origin);
+		
 	}
 
+	public void render(DrawableLevel level) {
+		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
+		GL13.glActiveTexture(GL13.GL_TEXTURE0);
+		drawStarField();
+		if(level != null)
+		{
+			drawLevel(level);
+		}
+	}
+	
+	private float[] tmpMatrix = new float[16];
+	public synchronized void drawModel(String model, float frame, Transform tr)
+	{
+		Model mdl = modelpool.getModel(model);
+		System.out.println(mdl + ", " + tr.origin);
+		tr.getOpenGLMatrix(tmpMatrix);
+		mdl.draw(frame, getViewProjectionMatrix(), tmpMatrix, this);
+	}
+	
+	public void setFullScreen(boolean on)
+	{
+		if(on){
+			try {
+				Display.setDisplayMode(Display.getDesktopDisplayMode());
+				GL11.glViewport(0, 0, Display.getWidth(), Display.getHeight());
+				Display.setFullscreen(true);
+			} catch (LWJGLException e) {
+				e.printStackTrace();
+			}
+			
+		}else{
+			try {
+				Display.setDisplayMode(new DisplayMode(width, height));
+				GL11.glViewport(0, 0, Display.getWidth(), Display.getHeight());
+			} catch (LWJGLException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
 	private void setupStarField()
 	{
-		//Setup starfield shader
-		starfield_vsId = ShaderUtils.makeShader(ShaderUtils.loadText("Resources/shaders/stars.vert"), GL20.GL_VERTEX_SHADER);
-		// Load the fragment shader
-		starfield_fsId = ShaderUtils.makeShader(ShaderUtils.loadText("Resources/shaders/stars.frag"), GL20.GL_FRAGMENT_SHADER);
-		
-		// Create a new shader program that links both shaders
-		starfield_shader_id = ShaderUtils.makeProgram(starfield_vsId, starfield_fsId);
-		
-		GL20.glBindAttribLocation(starfield_shader_id, 0, "in_Position");
-		GL20.glBindAttribLocation(starfield_shader_id, 1, "in_Color");
-		
-		vpMatrixPos = GL20.glGetUniformLocation(starfield_shader_id, "viewprojMatrix");
-		
-		GL20.glValidateProgram(starfield_shader_id);
+		shader = new GLShader("Resources/shaders/stars");
+		shader.bindAttribLocation(0, "in_Position");
+		shader.bindAttribLocation(1, "in_Color");
 		GLUtil.cerror(getClass().getName() + " setupShader");
 		
 		//Compile VBO
-		float[] starColors = new float[STAR_COUNT * 4];
-		float[] starVertices = new float[STAR_COUNT * 3];
+		starVbo = new GLVbo(GL15.GL_ARRAY_BUFFER);
 		float distance = 500f;
+		Random rnd = new Random();
 		for (int i = 0; i < STAR_COUNT; i++)
 		{
-			float yaw = 	(float) (Math.random() * 2 * Math.PI);
-			float pitch = 	(float) (Math.random() * 2 * Math.PI);
-			starVertices[i + 0] = (float) (distance * Math.cos(yaw) * Math.sin(pitch));
-			starVertices[i + 1] = (float) (distance * Math.sin(yaw) * Math.sin(pitch));
-			starVertices[i + 2] = (float) (distance * Math.cos(pitch));
+			float yaw = 	(float) (rnd.nextFloat() * 2 * Math.PI);
+			float pitch = 	(float) (rnd.nextFloat() * 2 * Math.PI);
+			starVbo.addElements((float) (distance * Math.cos(yaw) * Math.sin(pitch)));
+			starVbo.addElements((float) (distance * Math.sin(yaw) * Math.sin(pitch)));
+			starVbo.addElements((float) (distance * Math.cos(pitch)));
 			
-			starColors[i + 0] = (float) Math.random() + 0.8f;
-			starColors[i + 1] = 0.9f;
-			starColors[i + 2] = 0.9f;
-			starColors[i + 3] = (float) Math.random() + 0.2f;
+			starVbo.addElements((float) rnd.nextFloat() + 0.8f);
+			starVbo.addElements(0.9f);
+			starVbo.addElements(0.9f);
+			starVbo.addElements((float) rnd.nextFloat() + 0.2f);
 		}
+		starVbo.compile(GL15.GL_STATIC_DRAW);
 		
-		starVao_id = GL30.glGenVertexArrays();
-		GL30.glBindVertexArray(starVao_id);
+		starVao = new GLVao();
+		starVao.bind();
 		{
-			vbovid = GL15.glGenBuffers();
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbovid);
-			{
-				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, GLUtil.buffer(starVertices), GL15.GL_STATIC_DRAW);
-				GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 0, 0);
-			}
-			
-			vbocid = GL15.glGenBuffers();
-			GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, vbocid);
-			{
-				GL15.glBufferData(GL15.GL_ARRAY_BUFFER, GLUtil.buffer(starColors), GL15.GL_STATIC_DRAW);
-				GL20.glVertexAttribPointer(1, 4, GL11.GL_FLOAT, false, 0, 0);
-			}
-			GL20.glEnableVertexAttribArray(0);
-			GL20.glEnableVertexAttribArray(1);
+			starVao.addBuffer(0, 3, GL11.GL_FLOAT, 28, 0, starVbo);
+			starVao.addBuffer(1, 4, GL11.GL_FLOAT, 28, 12, starVbo);
 		}
-		GL30.glBindVertexArray(0);
 	}
 
 	public float[] getViewProjectionMatrix()
@@ -161,14 +195,9 @@ public class RenderEngine
 	
 	public void drawStarField()
 	{
-		ShaderUtils.useProgram(starfield_shader_id);
-		{
-			ShaderUtils.setUniformMatrix4(starfield_shader_id, "viewprojMatrix", getViewProjectionMatrix());
-			GL30.glBindVertexArray(starVao_id);
-			{
-				GL11.glDrawArrays(GL11.GL_POINTS, 0, STAR_COUNT);
-			}
-		}
+		shader.bind();
+		shader.setUniformMatrix4("viewprojMatrix", getViewProjectionMatrix());
+		starVao.drawArrays(GL11.GL_POINTS, 0, STAR_COUNT);
 	}
 	
 	public void destroy()

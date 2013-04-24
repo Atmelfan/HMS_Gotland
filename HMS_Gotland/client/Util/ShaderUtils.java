@@ -28,11 +28,7 @@ public class ShaderUtils
 	 */
 	public static void useProgram(int id)
 	{
-		if(id != lastShaderID && id != 0)
-		{
-			GL20.glUseProgram(id);
-			lastShaderID = id;
-		}
+		GL20.glUseProgram(id);
 	}
 
 	/**
@@ -273,18 +269,17 @@ public class ShaderUtils
 	{
 		try
 		{
-			try (BufferedReader br = new BufferedReader(new FileReader(
-					new File(s)));)
+			BufferedReader br = new BufferedReader(new FileReader(
+					new File(s)));
+			s = "";
+			String line = br.readLine();
+			while (line != null)
 			{
-				s = "";
-				String line = br.readLine();
-				while (line != null)
-				{
-					s += line;
-					s += "\n";
-					line = br.readLine();
-				}
+				s += line;
+				s += "\n";
+				line = br.readLine();
 			}
+			br.close();
 		} catch (IOException ex)
 		{
 			Logger.getLogger(ShaderUtils.class.getName()).log(Level.SEVERE,

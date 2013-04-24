@@ -174,7 +174,7 @@ public class ModelMD2 extends Model
 	public void compileVBO()
 	{
 		frame_ids = new int[header.num_frames];
-		ArrayList<VertexData> data = new ArrayList<>();
+		ArrayList<VertexData> data = new ArrayList<VertexData>();
 		for(int currentFrame = 0; currentFrame < header.num_frames; currentFrame++)
 		{
 			MD2_Frame frame = frames[currentFrame];// Current frame

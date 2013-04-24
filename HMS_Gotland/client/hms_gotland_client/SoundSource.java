@@ -1,6 +1,6 @@
 package hms_gotland_client;
 
-import hms_gotland_client.SoundManager.SoundBuffer;
+import hms_gotland_client.SoundEngine.SoundBuffer;
 
 import javax.vecmath.Vector3f;
 
@@ -12,14 +12,24 @@ public class SoundSource
 	/**
 	 * 
 	 */
-	private SoundManager soundSource;
+	private SoundEngine soundManager;
 	int source;
 	
-	public SoundSource(SoundManager soundManager, SoundBuffer sound)
+	public SoundSource(SoundEngine soundManager, SoundBuffer sound)
 	{
-		soundSource = soundManager;
+		this.soundManager = soundManager;
 		source = AL10.alGenSources();
 		connectBuffer(sound);
+		setDefaultValues();
+	}
+	
+	public void switchBuffer(String buffer)
+	{
+		SoundBuffer nbuffer = soundManager.getBuffer(buffer);
+		if(nbuffer != null)
+		{
+			connectBuffer(nbuffer);
+		}
 	}
 	
 	public void setVolume(float f)
@@ -30,12 +40,14 @@ public class SoundSource
 	public void connectBuffer(SoundBuffer sound)
 	{
 		AL10.alSourcei(source, AL10.AL_BUFFER,   sound.buffer);
-		AL10.alSourcef(source, AL10.AL_PITCH,    1.0f      );
-		AL10.alSourcef(source, AL10.AL_GAIN,     1.0f      );
-		soundSource.sourcePos.flip();
-		AL10.alSource (source, AL10.AL_POSITION, soundSource.sourcePos );
-		soundSource.sourceVel.flip();
-		AL10.alSource (source, AL10.AL_VELOCITY, soundSource.sourceVel );
+	
+	}
+	
+	private void setDefaultValues() {
+		AL10.alSourcef(source, AL10.AL_PITCH,    1.0f);
+		AL10.alSourcef(source, AL10.AL_GAIN,     1.0f);
+		AL10.alSource3f(source, AL10.AL_POSITION, 0, 1.6f, 0);
+		AL10.alSource3f(source, AL10.AL_VELOCITY, 0, 0, 0);
 	}
 	
 	public void setLooping(boolean loop)
@@ -71,5 +83,15 @@ public class SoundSource
 	public void pause() 
 	{
 		AL10.alSourcePause(source);
+	}
+	
+	public void stop() 
+	{
+		AL10.alSourceStop(source);
+	}
+	
+	public void rewind() 
+	{
+		AL10.alSourceRewind(source);
 	}
 }

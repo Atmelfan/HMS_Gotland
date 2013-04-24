@@ -23,7 +23,7 @@ public class ModelPool
 	{
 		if(!models.containsKey(name))//Model is not loaded...
 		{
-			load(name);//Load model
+			load(name);
 			return models.get(name);
 		}else//Model is loaded
 		{
@@ -34,6 +34,7 @@ public class ModelPool
 	private boolean load(String name)
 	{
 		File file = renderer.resources.getResource(name);
+		System.out.print(file.getAbsolutePath());
 		if(!file.exists())//Model does not exist
 		{
 			System.out.println("ModelPool::file does not exist(" + file.getAbsolutePath() + ")");

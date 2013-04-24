@@ -118,15 +118,15 @@ public class ModelSMD extends Model
 {
 	public int numPolygons = 0;
 	public int version;
-	private HashMap<String, SMDMaterial> materials = new HashMap<>();
-	private ArrayList<SMDNode> nodes = new ArrayList<>();
-	private ArrayList<ArrayList<SMDBone>> skeleton = new ArrayList<>();
-	private HashMap<String, ArrayList<SMDVertex>> trias = new HashMap<>();
+	private HashMap<String, SMDMaterial> materials = new HashMap<String, SMDMaterial>();
+	private ArrayList<SMDNode> nodes = new ArrayList<SMDNode>();
+	private ArrayList<ArrayList<SMDBone>> skeleton = new ArrayList<ArrayList<SMDBone>>();
+	private HashMap<String, ArrayList<SMDVertex>> trias = new HashMap<String, ArrayList<SMDVertex>>();
 	private int num_skeleton_frames;
 	
 	private HashMap<Integer, Integer> nodeParents;
-	private ArrayList<HashMap<Integer, Integer>> boneindices = new ArrayList<>();
-	private ArrayList<SMDBone> bones = new ArrayList<>();
+	private ArrayList<HashMap<Integer, Integer>> boneindices = new ArrayList<HashMap<Integer, Integer>>();
+	private ArrayList<SMDBone> bones = new ArrayList<SMDBone>();
 	
 	private static int vsId;
 	private static int fsId;
@@ -139,7 +139,7 @@ public class ModelSMD extends Model
 		read(resource);
 	}
 	
-	private void read(File resource)
+	protected void read(File resource)
 	{
 		String line = "";
 		BufferedReader input = null;

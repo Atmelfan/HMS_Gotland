@@ -35,7 +35,7 @@ public class OSUtil
 		return "unknown";	
 	}
 	
-	public static SimpleDateFormat dateFormat = new SimpleDateFormat("YY-MM-dd/HH.mm.ss");
+	public static SimpleDateFormat dateFormat = new SimpleDateFormat("yy-MM-dd/HH.mm.ss");
 	public static String getTime()
 	{
 		Calendar cal = Calendar.getInstance();
