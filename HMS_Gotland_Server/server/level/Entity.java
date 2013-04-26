@@ -9,6 +9,7 @@ import com.bulletphysics.collision.shapes.BoxShape;
 import com.bulletphysics.dynamics.DynamicsWorld;
 import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.RigidBodyConstructionInfo;
+import com.bulletphysics.linearmath.MotionState;
 import com.bulletphysics.linearmath.Transform;
 
 
@@ -17,7 +18,7 @@ public class Entity implements DrawableEntity{
 	public int entityID = entityIDs++;
 
 	protected CollisionObject body;// Physics body
-	protected EntityMotionState motionstate;
+	protected Motionstate motionstate;
 
 	private Transform tempTransform = new Transform();
 	private Level level;
@@ -98,7 +99,7 @@ public class Entity implements DrawableEntity{
 			startTransform.setIdentity();
 			startTransform.origin.set(new Vector3f(0, 0, 0));
 			// MotionState & body
-			motionstate = new EntityMotionState(startTransform);
+			motionstate = new Motionstate(startTransform);
 			RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(
 					getMass(), motionstate, shape, localInertia);
 			body = new RigidBody(rbInfo);
@@ -122,5 +123,29 @@ public class Entity implements DrawableEntity{
 	@Override
 	public Transform getTransform() {
 		return new Transform(getWorldTransform());
+	}
+	
+	public static class Motionstate extends MotionState
+	{
+		public Transform trans;
+		public Motionstate(Transform startTransform) {
+			trans = startTransform;
+		}
+
+		@Override
+		public Transform getWorldTransform(Transform arg0) {
+			arg0.set(trans);
+			return arg0;
+		}
+
+		public Transform getWorldTransform() {
+			return trans;
+		}
+
+		@Override
+		public void setWorldTransform(Transform arg0) {
+			trans.set(arg0);
+		}
+		
 	}
 }

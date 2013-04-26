@@ -1,7 +1,6 @@
 //singleplayer
 console: false
 //multiplayer
-
 //Screen
 width: 1024
 height: 512
@@ -11,4 +10,3 @@ autoupdate: true
 debug: false
 server-tcp: 4321
 server-udp: 4322
-level-threading: false

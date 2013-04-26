@@ -103,7 +103,6 @@ import com.bulletphysics.linearmath.QuaternionUtil;
  *   <vertex pos> <x><y><z> <nx><ny><nz>
  * end
  * inversekinematic
- *  TODO
  * end
  */
 
@@ -137,6 +136,7 @@ public class ModelSMD extends Model
 		boolean isNodes = false;
 		boolean isSkeleton = false;
 		boolean isTriangles = false;
+		boolean isVertexAnimations = false;
 		int lastTime = 0;
 		String lastMaterial = "";
 		SMDVertex currentTriangle = null;
@@ -173,12 +173,17 @@ public class ModelSMD extends Model
 				{
 					isTriangles = true;
 				}
+				else if(args[0].equals("vertexanimation"))
+				{
+					isTriangles = true;
+				}
 				else if(args[0].equals("end"))
 				{
 					isMaterials = false;
 					isNodes = false;
 					isSkeleton = false;
 					isTriangles = false;
+					isVertexAnimations = false;
 				}
 				//Data
 				else if(isMaterials)
@@ -226,20 +231,21 @@ public class ModelSMD extends Model
 						bone.setPosition(pos[0], pos[1], pos[2]);
 						bone.setEulerOrientation(ori[0], ori[1], ori[2]);
 						ArrayList<SMDBone> skel = skeleton.get(lastTime);
-						if(skel.isEmpty())
-						{//This is the first frame
-							skel.add(bone);
-						}else
-						{//Find and replace the old bone definition
-							for (int i = 0; i < skel.size(); i++)
+						boolean replaced = false;
+						//Skeleton already contains the 
+						for (int i = 0; i < skel.size(); i++)
+						{
+							SMDBone temp = skel.get(i);
+							if(temp.id == id)
 							{
-								SMDBone temp = skel.get(i);
-								if(temp.id == id)
-								{
-									skel.set(i, bone);//Replace the old bone with the new definition
-									break;
-								}
+								skel.set(i, bone);//Replace the old bone with the new definition
+								replaced = true;
+								break;
 							}
+						}
+						if(!replaced)
+						{
+							skel.add(bone);
 						}
 					}
 				}
@@ -374,7 +380,8 @@ public class ModelSMD extends Model
 		public float[] normal;
 		public float[] st;
 		
-		public void setVertex(float[] vertex, float[] normal, float[] st)
+		public void setVertex(float[] vertex,
+				float[] normal, float[] st)
 		{
 			this.vertex = vertex;
 			this.normal = normal;

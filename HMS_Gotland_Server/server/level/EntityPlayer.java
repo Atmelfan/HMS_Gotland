@@ -26,7 +26,7 @@ public class EntityPlayer extends Entity {
 		startTransform.setIdentity();
 		startTransform.origin.set(new Vector3f(0, 0, 0));
 		// MotionState & body
-		motionstate = new EntityMotionState(startTransform);
+		motionstate = new Motionstate(startTransform);
 		RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(
 				getMass(), motionstate, shape, localInertia);
 		body = new RigidBody(rbInfo);
