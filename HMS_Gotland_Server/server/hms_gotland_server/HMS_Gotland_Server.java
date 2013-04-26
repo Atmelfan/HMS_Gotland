@@ -25,7 +25,7 @@ public class HMS_Gotland_Server extends Thread {
 	public Level level;
 	private int port;
 	private boolean integrated;
-	protected boolean running = true;
+	protected volatile boolean running = true;
 
 	public static void main(String[] args) {
 
@@ -50,7 +50,7 @@ public class HMS_Gotland_Server extends Thread {
 		this.integrated = b;
 		lastTick = System.currentTimeMillis();
 		System.out.println((integrated ? "Server: " : "") + "Reading level...");
-		level = new Level(this, dir);
+		level = new Level(dir);
 		
 		if (!integrated) {
 			kryoServer = new Server();
@@ -90,7 +90,7 @@ public class HMS_Gotland_Server extends Thread {
 		List<Entity> entities = level.entities;
 		for (int i = 0; i < entities.size(); i++) {
 			if (!(entities.get(i) instanceof EntityPlayer)) {
-				kryoServer.sendToAllTCP(new Packet.PositionEntity(
+				kryoServer.sendToAllTCP(new Packet.EntityPosition(
 						entities.get(i)));
 			}
 		}
@@ -140,24 +140,21 @@ public class HMS_Gotland_Server extends Thread {
 			// System.out.println(object);
 			if (object instanceof Packet.Login) {
 				// System.out.println("hey");
-				if (players.get(connection) == null) {
+				if(players.get(connection) == null) {
 					String name = ((Packet.Login) object).name;
 					EntityPlayer player = new EntityPlayer(level, name);
 					player.setPos(level.getPlayerPos());
 					players.put(connection, player);
 					connection.setName(name);
-					connection.sendTCP(new Packet.AcceptLogin(player.entityID,
-							level.getPlayerPos(), level.modelName));
+					connection.sendTCP(new Packet.AcceptLogin(player.entityID, level.getPlayerPos(), level.modelName));
 					List<Entity> entities = level.entities;
-					for (int i = 0; i < entities.size(); i++) {
-						kryoServer.sendToTCP(connection.getID(),
-								new Packet.CreateEntity(entities.get(i)));
+					for (int i = 0; i < entities.size(); i++) 
+					{
+						kryoServer.sendToTCP(connection.getID(), new Packet.CreateEntity(entities.get(i)));
 					}
-					kryoServer.sendToAllExceptTCP(connection.getID(),
-							new Packet.CreateEntity(player));
+					kryoServer.sendToAllExceptTCP(connection.getID(), new Packet.CreateEntity(player));
 					level.addPlayer(player);
-					System.out.println((integrated ? "Server: " : "") + name
-							+ " logged in.");
+					System.out.println((integrated ? "Server: " : "") + name + " logged in.");
 				}
 			}
 			if (object instanceof Packet.ReqInfo) {

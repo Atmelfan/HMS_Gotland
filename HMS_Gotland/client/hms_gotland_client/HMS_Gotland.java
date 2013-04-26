@@ -2,8 +2,8 @@ package hms_gotland_client;
 
 import java.io.File;
 
-import level.BaseLevel;
-import level.LevelSingleplayer;
+import level.DrawableLevel;
+import level.Level;
 
 import org.lwjgl.Sys;
 import org.lwjgl.input.Keyboard;
@@ -38,7 +38,7 @@ public class HMS_Gotland
 	private int fps;
 	private int currentfps;
 	
-	private BaseLevel level;
+	private DrawableLevel level;
 	public RenderEngine renderEngine;
 
 	private ResourceManager resources;
@@ -145,16 +145,7 @@ public class HMS_Gotland
 			renderEngine.camera.pitch += Mouse.getDY();
 			renderEngine.camera.pitch = clamp(renderEngine.camera.pitch, -35, 35);
 			renderEngine.camera.yaw += Mouse.getDX();
-			if(level != null && level.getPlayer() != null)
-			{
-				level.getPlayer().move(-renderEngine.camera.yaw);
-			}
-		}
-		
-		if(level != null && level.getPlayer() != null)
-		{
-			soundEngine.setPosition(level.getPlayer().getPos());
-			soundEngine.setVelocity(level.getPlayer().getVel());
+			
 		}
 		
 		while(Keyboard.next()) 
@@ -181,9 +172,7 @@ public class HMS_Gotland
 				Mouse.setGrabbed(false);
 				break;
 			case Keyboard.KEY_F1:
-				level = new LevelSingleplayer();
-				level.init(new File("Servers/singleplayer/"));
-				playing = true;
+				//TODO
 				break;
 			case Keyboard.KEY_F2:
 				renderEngine.setFullScreen(!Display.isFullscreen());
@@ -230,7 +219,7 @@ public class HMS_Gotland
 	/**
 	 * @return the level
 	 */
-	public BaseLevel getLevel()
+	public DrawableLevel getLevel()
 	{
 		return level;
 	}
@@ -238,7 +227,7 @@ public class HMS_Gotland
 	/**
 	 * @param level the level to set
 	 */
-	public void setLevel(BaseLevel level)
+	public void setLevel(DrawableLevel level)
 	{
 		this.level = level;
 	}

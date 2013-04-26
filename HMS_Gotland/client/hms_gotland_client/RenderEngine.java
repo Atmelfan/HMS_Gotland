@@ -5,28 +5,18 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
-import java.util.List;
 import java.util.Random;
 
-import org.lwjgl.BufferUtils;
 import org.lwjgl.LWJGLException;
 import org.lwjgl.Sys;
-import org.lwjgl.openal.AL;
-import org.lwjgl.opencl.CL;
-import org.lwjgl.opencl.CL10;
 import org.lwjgl.opencl.CLCommandQueue;
 import org.lwjgl.opencl.CLContext;
-import org.lwjgl.opencl.CLDevice;
-import org.lwjgl.opencl.CLPlatform;
-import org.lwjgl.opencl.Util;
 import org.lwjgl.opengl.ContextAttribs;
 import org.lwjgl.opengl.Display;
 import org.lwjgl.opengl.DisplayMode;
 import org.lwjgl.opengl.GL11;
 import org.lwjgl.opengl.GL13;
 import org.lwjgl.opengl.GL15;
-import org.lwjgl.opengl.GL20;
 import org.lwjgl.opengl.GL30;
 import org.lwjgl.opengl.PixelFormat;
 
@@ -35,7 +25,6 @@ import com.bulletphysics.linearmath.Transform;
 import de.matthiasmann.twl.utils.PNGDecoder;
 import de.matthiasmann.twl.utils.PNGDecoder.Format;
 
-import level.BaseLevel;
 import level.DrawableLevel;
 import model.GLShader;
 import model.Model;
@@ -114,7 +103,7 @@ public class RenderEngine
 		
 	}
 
-	public void render(BaseLevel level) {
+	public void render(DrawableLevel level) {
 		GL11.glClear(GL11.GL_COLOR_BUFFER_BIT | GL11.GL_DEPTH_BUFFER_BIT);
 		GL13.glActiveTexture(GL13.GL_TEXTURE0);
 		drawStarField();

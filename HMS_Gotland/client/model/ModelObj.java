@@ -28,7 +28,6 @@ import com.bulletphysics.util.ObjectArrayList;
 
 import Util.GLUtil;
 import Util.ShaderUtils;
-import Util.VertexData;
 
 /**
  * @author Jeremy Adams (elias4444)

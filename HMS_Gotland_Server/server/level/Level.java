@@ -1,16 +1,11 @@
 package level;
 
-import hms_gotland_server.HMS_Gotland_Server;
-
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
-import java.nio.ByteBuffer;
-import java.nio.IntBuffer;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 
 import javax.vecmath.Vector3f;
@@ -18,11 +13,6 @@ import com.bulletphysics.collision.broadphase.AxisSweep3_32;
 import com.bulletphysics.collision.dispatch.CollisionDispatcher;
 import com.bulletphysics.collision.dispatch.CollisionObject;
 import com.bulletphysics.collision.dispatch.DefaultCollisionConfiguration;
-import com.bulletphysics.collision.shapes.BoxShape;
-import com.bulletphysics.collision.shapes.BvhTriangleMeshShape;
-import com.bulletphysics.collision.shapes.CollisionShape;
-import com.bulletphysics.collision.shapes.IndexedMesh;
-import com.bulletphysics.collision.shapes.TriangleIndexVertexArray;
 import com.bulletphysics.dynamics.DiscreteDynamicsWorld;
 import com.bulletphysics.dynamics.DynamicsWorld;
 import com.bulletphysics.dynamics.InternalTickCallback;
@@ -30,7 +20,7 @@ import com.bulletphysics.dynamics.RigidBody;
 import com.bulletphysics.dynamics.constraintsolver.SequentialImpulseConstraintSolver;
 import com.bulletphysics.util.ObjectArrayList;
 
-public class Level {
+public class Level{
 
 	private File levelFile;
 	public List<Entity> entities = new ArrayList<Entity>();
@@ -38,11 +28,10 @@ public class Level {
 	public String name;
 
 	// Physics
-	public LevelCollisionShape model;
+	public ObjCollisionShape model;
 	public RigidBody levelbody;
 	public DynamicsWorld level;
 
-	private HMS_Gotland_Server game;
 
 	private Vector3f playerPos = new Vector3f();
 
@@ -50,17 +39,16 @@ public class Level {
 	private boolean hasDependencies;
 	private Object lock = new Object();
 
-	public Level(HMS_Gotland_Server hms_Gotland_Server, File level) {
-		game = hms_Gotland_Server;
+	public Level(File level) {
 		// Setup bullet world
-		setupWorld();
-		// Read level save file
-		levelFile = level;
-		try {
-			parseLevelFile(levelFile);
-		} catch (IOException e) {
-			System.err.println("Error loading level:  - " + e.getMessage());
-		}
+			setupWorld();
+			// Read level save file
+			levelFile = level;
+			try {
+				parseLevelFile(levelFile);
+			} catch (IOException e) {
+				System.err.println("Error loading level:  - " + e.getMessage());
+			}
 	}
 
 	public void tick() {
@@ -73,7 +61,6 @@ public class Level {
 		synchronized (lock) {
 			entities.add(entity);
 			level.addCollisionObject(entity.getBody());
-			game.addEntity(entity);
 		}
 	}
 
@@ -81,7 +68,6 @@ public class Level {
 		synchronized (lock) {
 			entities.remove(entity);
 			level.removeCollisionObject(entity.getBody());
-			game.removeEntity(entity);
 		}
 	}
 
@@ -91,8 +77,7 @@ public class Level {
 				collisionConfiguration);
 		Vector3f worldAabbMin = new Vector3f(-10000, -10000, -10000);
 		Vector3f worldAabbMax = new Vector3f(10000, 10000, 10000);
-		AxisSweep3_32 overlappingPairCache = new AxisSweep3_32(worldAabbMin,
-				worldAabbMax);
+		AxisSweep3_32 overlappingPairCache = new AxisSweep3_32(worldAabbMin, worldAabbMax);
 		SequentialImpulseConstraintSolver solver = new SequentialImpulseConstraintSolver();
 
 		level = new DiscreteDynamicsWorld(dispatcher, overlappingPairCache,
@@ -158,31 +143,30 @@ public class Level {
 								Float.parseFloat(lines[3]),
 								Float.parseFloat(lines[4]));
 					} else {
-						throw new LevelException(file.getName(),
-								"Invalid &player command", lineCount);
+						System.err.println(file.getName() +
+								" Invalid &player command " + lineCount);
 					}
 				} else if (line.startsWith("&name")) {
 					String[] lines = line.split(" ");
 					if (lines.length > 1) {
 						name = lines[1];
 					} else {
-						throw new LevelException(file.getName(),
-								"Invalid &name command", lineCount);
+						System.err.println(file.getName() +
+								" Invalid &name command " + lineCount);
 					}
 				} else if (line.startsWith("&obj")) {
 					String[] lines = line.split(" ");
 					if (lines.length > 1) {
 						modelName = lines[1];
-						String n = lines[1]
-								.replace("server://", file.getPath()).replace(
+						String n = lines[1].replace("server://", file.getPath()).replace(
 										"generic://", "Resources/assets/");
 						System.out.println(n);
-						model = new LevelCollisionShape(new File(n), false);
+						model = new ObjCollisionShape(new File(n), false);
 						levelbody = model.body();
 						level.addRigidBody(levelbody);
 					} else {
-						throw new LevelException(file.getName(),
-								"Invalid &obj command", lineCount);
+						System.err.println(file.getName() +
+								"  Invalid &obj command " + lineCount);
 					}
 				}
 			}
@@ -192,9 +176,6 @@ public class Level {
 			e.printStackTrace();
 		} catch (IOException e) {
 			System.out.println("Could not read level file!");
-			e.printStackTrace();
-		} catch (LevelException e) {
-			System.out.println("Invalid level file!");
 			e.printStackTrace();
 		} finally {
 			reader.close();

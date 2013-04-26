@@ -2,7 +2,7 @@ package level;
 
 public class EntityConstructInfo {
 	//
-	public float health;
+	public int health;
 	public boolean killable;
 
 	// Model, rendering etc

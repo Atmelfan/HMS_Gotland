@@ -23,7 +23,6 @@ import org.lwjgl.opengl.GL30;
 
 import Util.GLUtil;
 import Util.ShaderUtils;
-import Util.VertexData;
 
 /**
  * @author Atmelfan
@@ -135,17 +134,17 @@ public class ModelMD2 extends Model
 				
 				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, frame_0);//Bind frame 0
 				{
-					GL20.glVertexAttribPointer(0, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
-					GL20.glVertexAttribPointer(1, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
-					GL20.glVertexAttribPointer(2, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
+					GL20.glVertexAttribPointer(0, 3, GL11.GL_FLOAT, false, 32, 0);
+					GL20.glVertexAttribPointer(1, 2, GL11.GL_FLOAT, false, 32, 12);
+					GL20.glVertexAttribPointer(2, 3, GL11.GL_FLOAT, false, 32, 20);
 				}
 				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
 				
 				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, frame_1);//Bind frame 1
 				{
-					GL20.glVertexAttribPointer(3, VertexData.positionElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.positionByteOffset);
-					GL20.glVertexAttribPointer(4, VertexData.textureElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.textureByteOffset);
-					GL20.glVertexAttribPointer(5, VertexData.normalElementCount, GL11.GL_FLOAT, false, VertexData.stride, VertexData.normalByteOffset);
+					GL20.glVertexAttribPointer(3, 3, GL11.GL_FLOAT, false, 32, 0);
+					GL20.glVertexAttribPointer(4, 2, GL11.GL_FLOAT, false, 32, 12);
+					GL20.glVertexAttribPointer(5, 3, GL11.GL_FLOAT, false, 32, 20);
 				}
 				
 				GL15.glBindBuffer(GL15.GL_ARRAY_BUFFER, 0);
@@ -174,7 +173,7 @@ public class ModelMD2 extends Model
 	public void compileVBO()
 	{
 		frame_ids = new int[header.num_frames];
-		ArrayList<VertexData> data = new ArrayList<VertexData>();
+		ArrayList<float[]> data = new ArrayList<float[]>();
 		for(int currentFrame = 0; currentFrame < header.num_frames; currentFrame++)
 		{
 			MD2_Frame frame = frames[currentFrame];// Current frame
@@ -182,16 +181,19 @@ public class ModelMD2 extends Model
 			{
 				for (int j = 0; j < 3; j++)
 				{
-					VertexData temp = new VertexData();
+					float[] temp = new float[8];
 					//Extract position from vertex array using triangles vertex index
 					MD2_Vertex vertex = frame.vertices[triangles[currentTriangle].vertexIndex[j]];
 					//For MD2 format/exporter Z is up, swap Z and Y for OGL
-					temp.setXYZ(vertex.v[1], vertex.v[2], vertex.v[0]);
+					temp[0] = vertex.v[1];
+					temp[1] = vertex.v[2];
+					temp[2] = vertex.v[0];
 					
 					//Extract texture coords from st array using triangle texture index
 					float s = (float)(textureCoords[triangles[currentTriangle].textureIndex[j]].s / 256f);
 					float t = (float)(textureCoords[triangles[currentTriangle].textureIndex[j]].t / 256f);
-					temp.setST(s, t);
+					temp[3] = s;
+					temp[4] = t;
 					
 					//Normals, why hardcoded?
 					int index = frame.vertices[triangles[currentTriangle].vertexIndex[j]].lightNormalIndex;
@@ -199,19 +201,21 @@ public class ModelMD2 extends Model
 					if(index < normals.length)
 					{
 						float[] n = normals[index];
-						temp.setNormal(n[0], n[2], n[1]);
+						temp[5] = n[0];
+						temp[6] = n[2];
+						temp[7] = n[1];
 					}
 					
 					data.add(temp);//Add vertex data
 				}
 			}
 			//Put data into floatbuffer
-			ByteBuffer verticesByteBuffer = BufferUtils.createByteBuffer(data.size() * VertexData.stride);				
+			ByteBuffer verticesByteBuffer = BufferUtils.createByteBuffer(data.size() * 32);				
 			FloatBuffer verticesFloatBuffer = verticesByteBuffer.asFloatBuffer();
 			for (int i = 0; i < data.size(); i++) 
 			{
 				// Add position, normal and texture floats to the buffer
-				verticesFloatBuffer.put(data.get(i).getElements());
+				verticesFloatBuffer.put(data.get(i));
 			}
 			verticesFloatBuffer.flip();
 			

@@ -22,10 +22,17 @@ public class Entity implements DrawableEntity{
 
 	private Transform tempTransform = new Transform();
 	private Level level;
+	
+	private EntityConstructInfo info;
 	private int health = 100;
 
 	public Entity(Level level) {
 		this.level = level;
+	}
+	
+	public Entity(Level level, EntityConstructInfo info2) {
+		this.level = level;
+		health = info2.health;
 	}
 
 	public DynamicsWorld getWorld() {
@@ -84,42 +91,20 @@ public class Entity implements DrawableEntity{
 	}
 
 	public void processTag(String tag) {
-		String[] cmds = tag.split(" ");
-		if (cmds[0].equalsIgnoreCase("&pos") && cmds.length > 3) {
-			setPos(new Vector3f(Float.valueOf(cmds[1]), Float.valueOf(cmds[2]),
-					Float.valueOf(cmds[3])));
-		}
-		if (cmds[0].equalsIgnoreCase("&phys") && cmds.length > 3) {
-			BoxShape shape = new BoxShape(new Vector3f(Float.valueOf(cmds[1]),
-					Float.valueOf(cmds[2]), Float.valueOf(cmds[3])));
-			Vector3f localInertia = new Vector3f(0, 0, 0);
-			shape.calculateLocalInertia(getMass(), localInertia);
-			// Transform
-			Transform startTransform = new Transform();
-			startTransform.setIdentity();
-			startTransform.origin.set(new Vector3f(0, 0, 0));
-			// MotionState & body
-			motionstate = new Motionstate(startTransform);
-			RigidBodyConstructionInfo rbInfo = new RigidBodyConstructionInfo(
-					getMass(), motionstate, shape, localInertia);
-			body = new RigidBody(rbInfo);
-			body.setRestitution(0.1f);
-			body.setFriction(0.50f);
-
-			// Associate this entity with the body and collisionshape
-			body.setUserPointer(this);
-			shape.setUserPointer(this);
-		}
 	}
 
 	public Quat4f getAngle() {
 		return getWorldTransform().getRotation(new Quat4f());
 	}
 
-	public void tick(float dt) {
-
+	public void tick(float dt) 
+	{
 	}
 
+	public void tickAI(float dt)
+	{
+	}
+	
 	@Override
 	public Transform getTransform() {
 		return new Transform(getWorldTransform());
@@ -148,4 +133,11 @@ public class Entity implements DrawableEntity{
 		}
 		
 	}
+
+	@Override
+	public Vector3f getPosition()
+	{
+		return new Vector3f(motionstate.getWorldTransform().origin);
+	}
+
 }

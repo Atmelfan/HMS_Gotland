@@ -15,7 +15,7 @@ public class EntityPlayer extends Entity {
 
 	public EntityPlayer(Level level, String name) {
 		super(level);
-		LevelCollisionShape sh = new LevelCollisionShape(new File(
+		ObjCollisionShape sh = new ObjCollisionShape(new File(
 				"Resources/assets/models/", getModelName()), false);
 		BoxShape shape = new BoxShape(new Vector3f(sh.getXWidth() / 2,
 				sh.getYHeight() / 2, sh.getZDepth() / 2));

@@ -79,8 +79,14 @@ public class GLShader {
 		vid = makeShader(loadText(name + ".vert"), VERTEX);
 		gid = makeShader(loadText(name + ".geom"), GEOMETRY);
 		fid = makeShader(loadText(name + ".frag"), FRAGMENT);
+		if(gid != -1)
+		{
+			id = makeProgram(vid, gid, fid);
+		}else
+		{
+			id = makeProgram(vid, fid);
+		}
 		
-		id = makeProgram(vid, gid, fid);
 	}
 
 	private int makeProgram(int... shaders)
@@ -105,7 +111,7 @@ public class GLShader {
 	private int makeShader(String source, int type)
 	{
 		if(source == null)
-			return 0;
+			return -1;
 		if(source.contains("#matrices"))
 		{
 			source.replace("#matrices", 
@@ -136,7 +142,7 @@ public class GLShader {
 		{
 			System.err.println("#####Error compiling shader!#####\n" + source);
 			System.err.println(s);
-			return 0;
+			return -1;
 		}
 		// GLException.checkGLError();
 		return id;

@@ -31,7 +31,7 @@ import com.bulletphysics.linearmath.Transform;
  *         BufferedReader(fr);
  */
 
-public class LevelCollisionShape {
+public class ObjCollisionShape {
 
 	private ArrayList<float[]> vertexsets = new ArrayList<float[]>(); // Vertex
 																		// Coordinates
@@ -49,7 +49,7 @@ public class LevelCollisionShape {
 	public float farpoint = 0; // z-
 	public float nearpoint = 0; // z+
 
-	public LevelCollisionShape(File file, boolean clearVertexData) {
+	public ObjCollisionShape(File file, boolean clearVertexData) {
 		read(file);
 		centerit();
 		compileVBO();

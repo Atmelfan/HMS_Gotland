@@ -19,7 +19,6 @@ import org.lwjgl.opengl.GL30;
 
 import Util.GLUtil;
 import Util.ShaderUtils;
-import Util.VertexData;
 
 public class ModelMD3 extends Model
 {

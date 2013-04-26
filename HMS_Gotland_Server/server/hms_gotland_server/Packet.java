@@ -22,7 +22,7 @@ public class Packet {
 		kryo.register(ReqInfo.class);
 		kryo.register(Dependency.class);
 		kryo.register(CreateEntity.class);
-		kryo.register(PositionEntity.class);
+		kryo.register(EntityPosition.class);
 		// #####Aux classes#####
 		kryo.register(Vector3f.class);
 		kryo.register(Quat4f.class);
@@ -118,14 +118,28 @@ public class Packet {
 		}
 	}
 
-	public static class PositionEntity extends EntityPacket {
+	public static class EntityPosition extends EntityPacket {
 		public Vector3f origin;
 		public Quat4f basis;
 
-		public PositionEntity() {
+		public EntityPosition() {
 		}
 
-		public PositionEntity(Entity entity) {
+		public EntityPosition(Entity entity) {
+			entityID = entity.entityID;
+			origin = entity.getPos();
+			basis = entity.getAngle();
+		}
+	}
+	
+	public static class EntityVelocity extends EntityPacket {
+		public Vector3f origin;
+		public Quat4f basis;
+
+		public EntityVelocity() {
+		}
+
+		public EntityVelocity(Entity entity) {
 			entityID = entity.entityID;
 			origin = entity.getPos();
 			basis = entity.getAngle();
